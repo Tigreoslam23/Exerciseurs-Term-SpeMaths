@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexus Arena · Défis de dénombrement</title>
+  <style>
+    :root{--bg:#081426;--panel:#142b49;--panel2:#0a1c32;--line:#294461;--text:#f4f8ff;--muted:#b9c7dc;--cyan:#40d9ff;--violet:#aa91ff;--green:#41e69a;--yellow:#ffd369;--red:#ff8190}
+    *{box-sizing:border-box}
+    html{background:var(--bg)}
+    body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5;background:radial-gradient(circle at 12% 5%,rgba(64,217,255,.13),transparent 31rem),radial-gradient(circle at 85% 95%,rgba(170,145,255,.11),transparent 29rem),var(--bg)}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+    [hidden]{display:none!important}
+    .shell{width:min(880px,calc(100% - 24px));margin:0 auto;padding:24px 0 42px}
+    header{display:flex;gap:15px;align-items:center;margin-bottom:22px}
+    .logo{flex:0 0 53px;height:53px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(135deg,var(--cyan),var(--green));color:#061221;font-size:1.4rem;font-weight:950}
+    h1,h2,h3,p{margin-top:0}
+    h1{font-size:clamp(1.45rem,4vw,2.15rem);margin-bottom:0}
+    h2{font-size:clamp(1.28rem,3vw,1.8rem)}
+    .subtitle{color:var(--muted);margin:0}
+    .panel{padding:clamp(18px,4vw,34px);background:linear-gradient(180deg,#142b49,#0e1f37);border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+    .intro,.note{color:var(--muted);max-width:690px}
+    .settings{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:21px 0 25px;padding:14px 16px;border-radius:15px;background:rgba(4,16,31,.5);border:1px solid var(--line)}
+    .settings strong{margin-right:5px}
+    .segmented{display:flex;gap:4px;padding:4px;border-radius:12px;background:#071426}
+    .segmented button{border:0;border-radius:9px;background:transparent;color:var(--muted);padding:8px 13px;font-weight:800}
+    .segmented button.active{background:#285471;color:#fff}
+    .level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .level-card{display:flex;flex-direction:column;gap:10px;padding:19px;background:rgba(7,20,38,.58);border:1px solid var(--line);border-radius:18px;min-height:208px}
+    .level-card:nth-child(2){border-color:#6b59a3}.level-card:nth-child(3){border-color:#b08f50}
+    .level-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(64,217,255,.14);color:var(--cyan);font-size:1.3rem}
+    .level-card:nth-child(2) .level-icon{background:rgba(170,145,255,.15);color:var(--violet)}
+    .level-card:nth-child(3) .level-icon{background:rgba(255,211,105,.14);color:var(--yellow)}
+    .level-card h3{margin:0;font-size:1.18rem}
+    .level-card p{margin:0 0 auto;color:var(--muted);font-size:.92rem}
+    .button{border:0;border-radius:13px;padding:12px 17px;font-weight:850;color:#051827;background:linear-gradient(135deg,var(--cyan),var(--green))}
+    .button:hover{filter:brightness(1.07)}
+    .button.secondary{background:#243d5b;color:var(--text);border:1px solid #3a5778}
+    .button.amber{background:var(--yellow)}
+    .button:disabled{opacity:.5;cursor:not-allowed}
+    .eyebrow{font-size:.81rem;letter-spacing:.075em;text-transform:uppercase;color:var(--cyan);font-weight:850}
+    .topline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .progress-text{color:var(--muted);font-weight:800}
+    .progress{height:9px;background:#061426;border-radius:999px;overflow:hidden;margin:12px 0 22px}
+    .progress div{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .2s}
+    .visual{min-height:116px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;margin:10px 0 20px;padding:15px;background:#091b32;border:1px solid var(--line);border-radius:18px;overflow:auto}
+    .question{font-size:clamp(1.16rem,3vw,1.48rem);line-height:1.45;margin-bottom:18px}
+    .answer-label{display:block;font-weight:800;margin-bottom:8px}
+    .answer-row{display:flex;align-items:stretch;gap:10px}
+    .answer-row input{min-width:0;flex:1;background:#06182c;border:2px solid #466785;color:var(--text);border-radius:13px;padding:11px 15px;font-size:1.18rem}
+    .answer-row input::placeholder{color:#8299b5}
+    .feedback{margin:17px 0 0;padding:16px;border:1px solid var(--line);border-radius:15px;background:#0a1c32}
+    .feedback.hint{border-color:#ad8842}.feedback.success{border-color:var(--green)}.feedback.failure{border-color:var(--red)}
+    .feedback h3{font-size:1.03rem;margin:0 0 5px}
+    .feedback p{margin:0;color:#dfebf9}
+    .actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+    .skip{background:none;border:0;color:var(--muted);font-weight:750;text-decoration:underline;text-underline-offset:3px;padding:8px}
+    .result{text-align:center;padding:18px 0 6px}
+    .score{font-size:clamp(2.4rem,8vw,4.5rem);color:var(--green);font-weight:950;margin:8px 0}
+    .result .breakdown{color:var(--muted)}
+    .result-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:23px}
+    .privacy{margin:18px 3px 0;color:#91a5be;text-align:center;font-size:.83rem}
+    .die{font-size:3.2rem;line-height:1;color:#f7fbff;text-shadow:0 4px 9px rgba(0,0,0,.4)}
+    .die:nth-child(even){color:#85c4ff}
+    .die:nth-child(3){color:#b3a0ff}
+    .die:nth-child(4){color:#ffe192}
+    .card{height:84px;width:60px;border-radius:9px;background:#f5f8fd;color:#12213a;padding:6px 7px;box-shadow:0 6px 15px rgba(0,0,0,.25);display:flex;justify-content:space-between;flex-direction:column;font-size:1.2rem;font-weight:900}
+    .card.red{color:#d53d57}
+    .card .suit{align-self:flex-end;font-size:1.8rem}
+    .tile{display:grid;place-items:center;height:52px;min-width:45px;border-radius:11px;background:#1f4767;border:1px solid #568db3;font-size:1.38rem;font-weight:900}
+    .tile.blank{color:#7195b2}
+    .plate{display:flex;align-items:stretch;border:3px solid #e6e8ed;border-radius:11px;min-height:72px;background:#e9edf3;color:#111c2d;box-shadow:0 8px 16px rgba(0,0,0,.25);overflow:hidden}
+    .plate .eu{display:grid;place-items:center;width:42px;background:#244eaf;color:#ffe479;font-size:.9rem;font-weight:800}
+    .plate .number{align-self:center;padding:8px 18px;font-size:clamp(1.3rem,5vw,2.1rem);font-weight:950;letter-spacing:.06em;white-space:nowrap}
+    .podium{display:flex;align-items:end;gap:7px;height:105px}
+    .step{display:grid;place-items:start center;width:63px;border:1px solid #5b8dad;border-radius:8px 8px 0 0;padding-top:8px;font-weight:950;color:#dcefff}
+    .step.first{height:92px;background:#315d83}.step.second{height:68px;background:#244564}.step.third{height:50px;background:#1b3855}
+    .avatars{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:510px}
+    .avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#234d6e;border:1px solid #5a8caf;font-size:.88rem;font-weight:900}
+    .suit-panel{display:flex;gap:8px;align-items:center;font-size:2.5rem;color:#f5f8fd}
+    .suit-panel .red{color:#fa7185}
+    math{font-family:"Cambria Math","STIX Two Math","DejaVu Serif",serif;vertical-align:middle;font-size:1.08em}
+    @media(max-width:720px){.level-grid{grid-template-columns:1fr}.level-card{min-height:0}.answer-row{flex-direction:column}.actions .button{width:100%}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="logo" aria-hidden="true">N</div>
+      <div><h1>Nexus Arena · Défis de dénombrement</h1><p class="subtitle">Réponds par un nombre entier · défis renouvelés à chaque partie</p></div>
+    </header>
+    <section id="menuView" class="panel">
+      <h2>Choisis ton niveau</h2>
+      <p class="intro">Les situations changent quand tu recommences. Une réponse juste au premier essai vaut 1 point ; après un indice, elle vaut 0,5 point. Tu peux passer une question si tu préfères. Pour les maquettes de plaques, seules les règles données dans l’énoncé s’appliquent.</p>
+      <div class="settings">
+        <strong>Durée de la partie</strong>
+        <div class="segmented" role="group" aria-label="Nombre de questions">
+          <button type="button" id="fiveButton" class="active" aria-pressed="true">5 questions</button>
+          <button type="button" id="tenButton" aria-pressed="false">10 questions</button>
+        </div>
+      </div>
+      <div class="level-grid">
+        <article class="level-card"><div class="level-icon" aria-hidden="true">●</div><h3>Facile</h3><p>Des choix courts pour prendre confiance.</p><button class="button" id="easyButton" type="button">Commencer</button></article>
+        <article class="level-card"><div class="level-icon" aria-hidden="true">◆</div><h3>Intermédiaire</h3><p>Plusieurs étapes ou une contrainte à prendre en compte.</p><button class="button" id="middleButton" type="button">Commencer</button></article>
+        <article class="level-card"><div class="level-icon" aria-hidden="true">★</div><h3>Difficile</h3><p>Des situations à organiser avec soin.</p><button class="button amber" id="hardButton" type="button">Commencer</button></article>
+      </div>
+    </section>
+    <section id="exerciseView" class="panel" hidden>
+      <div class="topline"><div id="levelLabel" class="eyebrow"></div><div id="position" class="progress-text"></div></div>
+      <div class="progress" aria-label="Progression"><div id="progressFill"></div></div>
+      <div id="visual" class="visual" aria-hidden="true"></div>
+      <h2 id="questionText" class="question"></h2>
+      <form id="answerForm" novalidate>
+        <label class="answer-label" for="answerInput">Ta réponse</label>
+        <div class="answer-row"><input id="answerInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Écris un nombre entier" aria-describedby="feedback"><button id="checkButton" class="button" type="submit">Valider</button></div>
+      </form>
+      <div id="feedback" class="feedback" role="status" aria-live="polite" hidden><h3 id="feedbackTitle"></h3><p id="feedbackText"></p></div>
+      <div class="actions"><button id="leaveButton" class="button secondary" type="button">Retour au menu</button><button id="skipButton" class="skip" type="button">Voir la solution · 0 point</button><button id="nextButton" class="button" type="button" hidden>Question suivante</button></div>
+    </section>
+    <section id="resultView" class="panel result" hidden>
+      <div aria-hidden="true" style="font-size:3rem">✦</div><div id="resultLevel" class="eyebrow"></div>
+      <div id="finalScore" class="score"></div><h2 id="resultTitle"></h2><p id="resultBreakdown" class="breakdown"></p>
+      <div class="result-actions"><button id="againButton" class="button" type="button">Nouvelle série</button><button id="homeButton" class="button secondary" type="button">Choisir un niveau</button></div>
+    </section>
+    <p class="privacy">Cette page fonctionne hors connexion. Les réponses et les scores ne sont pas envoyés.</p>
+  </main>
+  <script>
+    "use strict";
+    const $ = id => document.getElementById(id);
+    const choose = a => a[Math.floor(Math.random()*a.length)];
+    const randint = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+    const factorial = n => {let v=1;for(let i=2;i<=n;i++)v*=i;return v};
+    const comb = (n,k) => {let v=1;for(let i=1;i<=k;i++)v=v*(n-i+1)/i;return Math.round(v)};
+    const shuffle = a => {const b=a.slice();for(let i=b.length-1;i>0;i--){const j=randint(0,i);[b[i],b[j]]=[b[j],b[i]]}return b};
+    const format = n => n.toLocaleString("fr-FR").replace(/\u202f/g," ");
+    const alphabet = "ABCDEFGHJKLMNPQRSTVWXYZ";
+    const plateNote = "Modèle simplifié de plaque au format français : trois chiffres de 001 à 999 ; les lettres I, O et U sont exclues. Les autres restrictions d’attribution ne sont pas prises en compte.";
+    const fractionToken = (a,b) => "⟦f:"+a+":"+b+"⟧";
+    const B = (n,k) => "C("+n+","+k+")";
+
+    // Les familles d'énoncés se trouvent plus bas, avant le lancement de la partie.
+    const families = {easy:[],middle:[],hard:[]};
+    families.easy.push(
+      {category:"sport",make(){
+        const n=randint(7,13),event=choose(["course à pied","course cycliste","compétition de natation"]);
+        return {text:"Lors d’une "+event+", "+n+" personnes participent. Combien de podiums différents (1re, 2e et 3e places) peut-on obtenir ?",answer:n*(n-1)*(n-2),hint:"Les trois places sont différentes et une personne ne peut apparaître qu’une fois. Multiplie les choix successifs.",explanation:n+" × "+(n-1)+" × "+(n-2)+" = "+format(n*(n-1)*(n-2))+". L’ordre d’arrivée compte.",visual:{type:"podium"}};
+      }},
+      {category:"groupe",make(){
+        const n=randint(5,10);
+        return {text:"Parmi "+n+" joueurs, on forme une équipe de 2 sans attribuer de rôle. Combien d’équipes différentes ?",answer:comb(n,2),hint:"L’équipe A-B est la même que l’équipe B-A. Compte les paires sans les compter deux fois.",explanation:B(n,2)+" = "+fractionToken(n+" × "+(n-1),"2")+" = "+comb(n,2)+". L’ordre des deux personnes ne compte pas.",visual:{type:"avatars",count:n}};
+      }},
+      {category:"code",make(){
+        const k=randint(3,6),len=randint(3,4),letters=alphabet.slice(0,k);
+        return {text:"Un code de "+len+" lettres utilise seulement "+letters.split("").join(", ")+". Les lettres peuvent se répéter. Combien de codes ?",answer:k**len,hint:"À chaque position, les "+k+" lettres restent possibles. Utilise le principe multiplicatif.",explanation:k+" choix à chacune des "+len+" places donnent "+k+"^"+len+" = "+format(k**len)+" codes. Ici l’ordre compte.",visual:{type:"code",pattern:"?".repeat(len)}};
+      }},
+      {category:"dés",make(){
+        const d=randint(2,3);
+        return {text:"On lance "+d+" dés de couleurs différentes, chacun avec 6 faces. Combien de résultats possibles si on note séparément le résultat de chaque dé ?",answer:6**d,hint:"Chaque dé offre 6 possibilités, et les dés sont distingués par leur couleur. Multiplie.",explanation:"6^"+d+" = "+format(6**d)+" résultats possibles.",visual:{type:"dice",count:d}};
+      }},
+      {category:"cartes",make(){
+        const n=randint(5,9);
+        return {text:"Sur une table, il y a "+n+" cartes toutes différentes. On en choisit 2 pour former une main ; leur ordre ne compte pas. Combien de mains ?",answer:comb(n,2),hint:"Une main est un groupe de deux cartes : choisir A puis B donne la même main que B puis A.",explanation:B(n,2)+" = "+fractionToken(n+" × "+(n-1),"2")+" = "+comb(n,2)+".",visual:{type:"cards",count:n}};
+      }},
+      {category:"quadrillage",make(){
+        const r=randint(2,4),u=randint(2,3),total=r+u,answer=comb(total,r);
+        return {text:"Sur ce quadrillage, la fourmi va de D à A en faisant exactement "+r+" pas vers la droite et "+u+" pas vers le haut. Combien de chemins possibles ?",answer,hint:"Chaque chemin est une suite de "+total+" pas. Choisis où placer les "+r+" pas vers la droite.",explanation:"Il faut choisir "+r+" positions parmi "+total+" : "+B(total,r)+" = "+answer+".",visual:{type:"grid",r,u}};
+      }},
+      {category:"anagramme",make(){
+        const word=choose(["LUNE","TABLE","TRAIN"]);
+        return {text:"Une anagramme est un réarrangement de toutes les lettres d’un mot. Combien d’anagrammes différentes du mot « "+word+" » peut-on former, même si elles ne veulent rien dire ?",answer:factorial(word.length),hint:"Toutes les lettres sont distinctes. Combien de façons de les ranger, de la première à la dernière place ?",explanation:"Les "+word.length+" lettres sont distinctes : "+word.length+"! = "+factorial(word.length)+".",visual:{type:"tiles",word}};
+      }},
+      {category:"produit",make(){
+        const a=randint(3,5),b=randint(3,6);
+        return {text:"Dans un jeu, tu choisis 1 avatar parmi "+a+" et 1 véhicule parmi "+b+". Combien de couples avatar-véhicule peux-tu créer ?",answer:a*b,hint:"Chaque avatar peut être associé à chacun des véhicules. Applique le principe multiplicatif.",explanation:a+" × "+b+" = "+a*b+" couples possibles.",visual:{type:"avatars",count:a}};
+      }},
+      {category:"plaques",make(){
+        const first=choose(["BB","CD","LM"]),last=choose(["AA","CF","TT"]);
+        return {text:"Une maquette de plaque au format "+first+"-___-"+last+" garde ces quatre lettres fixes. Le bloc central va de 001 à 999. Combien de maquettes différentes ?",answer:999,hint:"Les lettres ne changent pas. Compte les nombres entiers de 1 à 999.",explanation:"Les blocs centraux 001, 002, …, 999 donnent 999 maquettes. "+plateNote,visual:{type:"plate",example:first+"-123-"+last}};
+      }},
+      {category:"addition",make(){
+        const a=randint(3,8),b=randint(4,9);
+        return {text:"Pour entrer dans une arène, tu peux choisir l’une des "+a+" portes du mode solo ou l’une des "+b+" portes du mode équipe. Tu choisis une seule porte. Combien de choix possibles ?",answer:a+b,hint:"Les portes des deux modes constituent deux cas distincts. Applique le principe additif.",explanation:a+" + "+b+" = "+(a+b)+" choix, car on choisit soit une porte solo, soit une porte équipe.",visual:{type:"avatars",count:a+b}};
+      }}
+    );
+
+    families.middle.push(
+      {category:"sport",make(){
+        const n=randint(15,25),event=choose(["un tournoi de jeux vidéo","une course de relais","une finale d’athlétisme"]);
+        return {text:"Dans "+event+" avec "+n+" participants distincts, on attribue l’or, l’argent et le bronze. Combien de podiums possibles ?",answer:n*(n-1)*(n-2),hint:"Les médailles sont différentes. Après l’or, il reste une personne de moins pour l’argent, puis encore une de moins.",explanation:n+" × "+(n-1)+" × "+(n-2)+" = "+format(n*(n-1)*(n-2))+". L’ordre compte, sans répétition.",visual:{type:"podium"}};
+      }},
+      {category:"groupe",make(){
+        const n=randint(8,13),answer=comb(n,3);
+        return {text:"Parmi "+n+" joueurs, on sélectionne 3 personnes pour une équipe sans rôle. Combien d’équipes différentes ?",answer,hint:"L’ordre d’annonce ne change pas l’équipe. Un même trio possède 3! ordres possibles.",explanation:B(n,3)+" = "+fractionToken(n+" × "+(n-1)+" × "+(n-2),"3 × 2 × 1")+" = "+format(answer)+".",visual:{type:"avatars",count:n}};
+      }},
+      {category:"cartes",make(){
+        const n=randint(9,13),k=3,answer=comb(n,k);
+        return {text:"On étale "+n+" cartes distinctes et on en prend 3 pour former une main. Combien de mains différentes ?",answer,hint:"Dans une main, l’ordre des cartes ne compte pas. Divise le nombre de tirages ordonnés par 3!.",explanation:B(n,3)+" = "+fractionToken(n+" × "+(n-1)+" × "+(n-2),"6")+" = "+format(answer)+".",visual:{type:"cards",count:n}};
+      }},
+      {category:"quadrillage",make(){
+        const r=randint(4,6),u=randint(3,5),answer=comb(r+u,r);
+        return {text:"Une fourmi va de D à A sur le quadrillage en avançant seulement vers la droite ("+r+" fois) ou vers le haut ("+u+" fois). Combien de chemins ?",answer,hint:"Il y a "+(r+u)+" déplacements en tout. Choisis les positions des "+r+" déplacements vers la droite ; l’ordre de ces directions compte.",explanation:"On place "+r+" déplacements à droite parmi "+(r+u)+" : "+B(r+u,r)+" = "+format(answer)+".",visual:{type:"grid",r,u}};
+      }},
+      {category:"anagramme",make(){
+        const word=choose(["BANANE","ANANAS","TOMATE","PAPAYE"]);
+        const tally={};for(const c of word)tally[c]=(tally[c]||0)+1;
+        const repeats=Object.values(tally).filter(x=>x>1),den=repeats.reduce((p,n)=>p*factorial(n),1),answer=factorial(word.length)/den;
+        return {text:"Une anagramme est un réarrangement de toutes les lettres. Combien d’anagrammes distinctes du mot « "+word+" » peut-on former, même sans signification ?",answer,hint:"Des lettres identiques peuvent être échangées sans créer de nouveau mot. Divise par le nombre de leurs permutations.",explanation:fractionToken(word.length+"!",repeats.map(x=>x+"!").join(" × "))+" = "+format(answer)+". On corrige les échanges des lettres identiques.",visual:{type:"tiles",word}};
+      }},
+      {category:"code",make(){
+        const k=randint(4,8),d=randint(2,3),letters=alphabet.slice(0,k),answer=k*k*10**d;
+        return {text:"Un code contient d’abord 2 lettres prises parmi "+letters.split("").join(", ")+", puis "+d+" chiffres de 0 à 9. Toutes les répétitions sont autorisées. Combien de codes ?",answer,hint:"Chaque place offre un nombre de choix indépendant. Multiplie ceux des lettres et ceux des chiffres.",explanation:k+"² × 10^"+d+" = "+format(answer)+" codes. L’ordre des caractères compte.",visual:{type:"code",pattern:"LL"+ "0".repeat(d)}};
+      }},
+      {category:"plaques",make(){
+        const k=randint(3,8),letters=alphabet.slice(0,k),answer=999*k*k;
+        return {text:"On fabrique des maquettes de plaques BB-___-??. Le bloc central peut aller de 001 à 999. Chacune des deux lettres finales est choisie parmi "+letters.split("").join(", ")+" ; les répétitions sont autorisées. Combien de maquettes ?",answer,hint:"Le début BB est fixé. Multiplie les choix du bloc central et ceux des deux lettres finales.",explanation:"999 × "+k+" × "+k+" = "+format(answer)+". "+plateNote,visual:{type:"plate",example:"BB-123-"+letters[0]+letters[1]}};
+      }},
+      {category:"dés",make(){
+        const d=randint(2,3),answer=d*5**(d-1);
+        return {text:"On lance "+d+" dés de couleurs différentes. Combien de résultats comportent exactement un seul 6 ?",answer,hint:"Choisis quel dé montre 6, puis impose aux autres une valeur différente de 6.",explanation:d+" × 5^"+(d-1)+" = "+answer+" résultats. Le dé qui affiche 6 peut être choisi de "+d+" façons.",visual:{type:"dice",count:d}};
+      }},
+      {category:"désigné",make(){
+        const n=randint(8,12),answer=comb(n-1,2);
+        return {text:"Parmi "+n+" joueurs dont A, on forme une équipe de 3 qui contient obligatoirement A. Combien d’équipes ?",answer,hint:"A est déjà choisi. Il reste deux places à pourvoir parmi les "+(n-1)+" autres, sans ordre.",explanation:B(n-1,2)+" = "+format(answer)+" équipes.",visual:{type:"avatars",count:n,special:true}};
+      }},
+      {category:"rangements",make(){
+        const n=randint(4,6),answer=2*factorial(n-1);
+        return {text:"On range "+n+" personnes distinctes en ligne. A et B doivent être côte à côte. Combien de rangements possibles ?",answer,hint:"Regroupe A et B en un seul bloc, puis n’oublie pas leurs deux ordres internes.",explanation:"2 × "+(n-1)+"! = "+format(answer)+" rangements : "+(n-1)+" objets à ordonner, puis AB ou BA.",visual:{type:"avatars",count:n,special:true}};
+      }}
+    );
+    families.hard.push(
+      {category:"sport",make(){
+        const n=randint(20,30),answer=3*(n-1)*(n-2);
+        return {text:"Une compétition réunit "+n+" sportifs, dont A. Combien de podiums (or, argent, bronze) placent A sur l’une des trois marches ?",answer,hint:"Choisis d’abord la marche de A, puis attribue les deux autres médailles à des personnes distinctes.",explanation:"3 × "+(n-1)+" × "+(n-2)+" = "+format(answer)+" podiums.",visual:{type:"podium"}};
+      }},
+      {category:"quadrillage",make(){
+        const r=randint(5,7),u=randint(4,6),x=randint(1,r-1),y=randint(1,u-1);
+        const first=comb(x+y,x),second=comb(r-x+u-y,r-x),answer=first*second;
+        return {text:"Sur ce quadrillage, la fourmi va de D à A avec "+r+" pas à droite et "+u+" pas vers le haut. P est situé à "+x+" pas à droite et "+y+" pas vers le haut de D. Combien de chemins passant par P, sans jamais aller à gauche ni descendre ?",answer,hint:"Compte séparément les chemins de D à P puis ceux de P à A ; combine les deux choix par multiplication.",explanation:B(x+y,x)+" × "+B(r-x+u-y,r-x)+" = "+first+" × "+second+" = "+format(answer)+" chemins.",visual:{type:"grid",r,u,checkpoint:{x,y}}};
+      }},
+      {category:"anagramme",make(){
+        const word=choose(["MISSISSIPPI","STATISTIQUE","MATHEMATIQUE"]);
+        const tally={};for(const c of word)tally[c]=(tally[c]||0)+1;
+        const repeats=Object.values(tally).filter(x=>x>1),den=repeats.reduce((p,n)=>p*factorial(n),1),answer=factorial(word.length)/den;
+        return {text:"Une anagramme est un réarrangement de toutes les lettres. Combien d’anagrammes distinctes du mot « "+word+" » peut-on créer, même sans signification ?",answer,hint:"Commence par ordonner toutes les lettres comme si elles étaient distinctes, puis divise pour chaque famille de lettres identiques.",explanation:fractionToken(word.length+"!",repeats.map(x=>x+"!").join(" × "))+" = "+format(answer)+" anagrammes.",visual:{type:"tiles",word}};
+      }},
+      {category:"cartes",make(){
+        const h=randint(2,3),other=5-h,answer=comb(13,h)*comb(39,other);
+        return {text:"Dans un jeu standard de 52 cartes, on forme une main de 5 cartes contenant exactement "+h+" cartes de cœur. Combien de mains possibles ?",answer,hint:"Choisis les "+h+" cœurs parmi 13, puis les "+other+" autres cartes parmi les 39 cartes qui ne sont pas des cœurs.",explanation:B(13,h)+" × "+B(39,other)+" = "+format(comb(13,h))+" × "+format(comb(39,other))+" = "+format(answer)+" mains.",visual:{type:"suits"}};
+      }},
+      {category:"code",make(){
+        const k=randint(4,6),d=randint(2,3),m=randint(3,5),letters=alphabet.slice(0,k),answer=comb(5,d)*m**d*k**(5-d);
+        return {text:"Un code de 5 caractères contient exactement "+d+" chiffres (parmi 0 à "+(m-1)+") et "+(5-d)+" lettres (parmi "+letters.split("").join(", ")+"). Les caractères peuvent se répéter. Combien de codes ?",answer,hint:"Choisis d’abord les positions des chiffres, puis remplis les positions de chiffres et de lettres ; l’ordre compte.",explanation:B(5,d)+" × "+m+"^"+d+" × "+k+"^"+(5-d)+" = "+format(answer)+" codes.",visual:{type:"code",pattern:"?????"}};
+      }},
+      {category:"plaques",make(){
+        const pair=choose(["BB","CC","DD"]),answer=(2*23**2-1)*999;
+        return {text:"Pour des maquettes de plaques au format LL-___-LL, chaque lettre est choisie parmi les 23 lettres autorisées (sans I, O, U) et le bloc va de 001 à 999. Combien de maquettes commencent par "+pair+" OU finissent par "+pair+" ?",answer,hint:"Additionne les maquettes qui commencent par "+pair+" et celles qui finissent par "+pair+", puis retire celles comptées deux fois.",explanation:"(23² + 23² − 1) × 999 = "+format(answer)+". L’intersection contient les plaques "+pair+"-___-"+pair+". "+plateNote,visual:{type:"plate",example:pair+"-123-"+pair}};
+      }},
+      {category:"plaques",make(){
+        const answer=23**4*999;
+        return {text:"On fabrique toutes les maquettes du format français LL-___-LL en utilisant 23 lettres (I, O et U exclues) à chacune des quatre places, répétitions autorisées, et un bloc de 001 à 999. Combien de maquettes dans ce modèle simplifié ?",answer,hint:"Il y a quatre positions de lettres indépendantes et 999 choix pour le bloc central. Applique le principe multiplicatif.",explanation:"23⁴ × 999 = "+format(answer)+". "+plateNote,visual:{type:"plate",example:"AB-123-CD"}};
+      }},
+      {category:"dés",make(){
+        const d=randint(3,4),answer=6**d-5**d;
+        return {text:"On lance "+d+" dés de couleurs différentes. Combien de résultats contiennent au moins un 6 ?",answer,hint:"Compte tous les résultats possibles, puis retire ceux où aucun dé ne montre 6.",explanation:"6^"+d+" − 5^"+d+" = "+format(answer)+" résultats.",visual:{type:"dice",count:d}};
+      }},
+      {category:"rangements",make(){
+        const n=randint(6,8),answer=factorial(n)-2*factorial(n-1);
+        return {text:"On range "+n+" personnes distinctes en ligne. A et B ne doivent pas être voisins. Combien de rangements possibles ?",answer,hint:"Prends tous les rangements, puis retire ceux où A et B forment un bloc ; ce bloc a deux ordres internes.",explanation:n+"! − 2 × "+(n-1)+"! = "+format(answer)+" rangements.",visual:{type:"avatars",count:n,special:true}};
+      }},
+      {category:"groupe",make(){
+        const n=randint(9,13),answer=comb(3,2)*comb(n-3,2);
+        return {text:"Parmi "+n+" joueurs, trois sont A, B et C. On forme une équipe de 4 contenant exactement deux personnes parmi A, B et C. Combien d’équipes ?",answer,hint:"Choisis deux personnes parmi A, B, C, puis deux parmi les "+(n-3)+" autres joueurs. L’ordre ne compte pas.",explanation:B(3,2)+" × "+B(n-3,2)+" = 3 × "+comb(n-3,2)+" = "+format(answer)+" équipes.",visual:{type:"avatars",count:n,special:true}};
+      }}
+    );
+
+    const state = {length:5,level:null,questions:[],index:0,attempts:0,score:0,full:0,half:0,zero:0,done:false};
+    const mathNS="http://www.w3.org/1998/Math/MathML";
+    function mathPart(s){
+      const m=document.createElementNS(mathNS,"mrow");
+      const nested=/^C\(([^,()]+),\s*([^()]+)\)$/.exec(s);
+      if(nested)m.appendChild(mathCore("b",nested[1],nested[2]));
+      else{const t=document.createElementNS(mathNS,"mtext");t.textContent=s;m.appendChild(t)}
+      return m;
+    }
+    function mathCore(kind,a,b){
+      const m=document.createElementNS(mathNS,"mrow"),f=document.createElementNS(mathNS,"mfrac");
+      f.append(mathPart(a),mathPart(b));
+      if(kind==="b"){
+        f.setAttribute("linethickness","0");
+        const l=document.createElementNS(mathNS,"mo"),r=document.createElementNS(mathNS,"mo");
+        l.textContent="(";r.textContent=")";m.append(l,f,r);
+      }else m.appendChild(f);
+      return m;
+    }
+    function fillMath(target,value){
+      target.replaceChildren();
+      const re=/⟦([fb]):([^:⟧]+):([^⟧]+)⟧|C\(([^,()]+),\s*([^()]+)\)/g;
+      let cursor=0,hit;
+      while((hit=re.exec(value))!==null){
+        target.appendChild(document.createTextNode(value.slice(cursor,hit.index)));
+        const kind=hit[1]||"b",a=hit[2]||hit[4],b=hit[3]||hit[5];
+        const node=document.createElementNS(mathNS,"math");
+        node.setAttribute("display","inline");node.setAttribute("displaystyle","true");
+        node.setAttribute("aria-label",kind==="b"?a+" parmi "+b:a+" sur "+b);
+        node.appendChild(mathCore(kind,a,b));target.appendChild(node);cursor=re.lastIndex;
+      }
+      target.appendChild(document.createTextNode(value.slice(cursor)));
+    }
+    function addVisual(type,data){
+      const host=$("visual");host.replaceChildren();
+      if(type==="grid"){
+        const r=data.r,u=data.u,step=35,pad=24;
+        const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+        svg.setAttribute("viewBox","0 0 "+(r*step+2*pad)+" "+(u*step+2*pad));
+        svg.setAttribute("width",Math.min(405,r*step+2*pad));
+        svg.setAttribute("height",Math.min(280,u*step+2*pad));
+        for(let i=0;i<=r;i++)for(let j=0;j<=u;j++){
+          if(i<r){const line=document.createElementNS("http://www.w3.org/2000/svg","line");line.setAttribute("x1",pad+i*step);line.setAttribute("x2",pad+(i+1)*step);line.setAttribute("y1",pad+(u-j)*step);line.setAttribute("y2",pad+(u-j)*step);line.setAttribute("stroke","#49708e");line.setAttribute("stroke-width","2");svg.appendChild(line)}
+          if(j<u){const line=document.createElementNS("http://www.w3.org/2000/svg","line");line.setAttribute("x1",pad+i*step);line.setAttribute("x2",pad+i*step);line.setAttribute("y1",pad+(u-j)*step);line.setAttribute("y2",pad+(u-j-1)*step);line.setAttribute("stroke","#49708e");line.setAttribute("stroke-width","2");svg.appendChild(line)}
+        }
+        const points=[{x:0,y:0,label:"D",color:"#40d9ff"},{x:r,y:u,label:"A",color:"#41e69a"}];
+        if(data.checkpoint)points.push({x:data.checkpoint.x,y:data.checkpoint.y,label:"P",color:"#ffd369"});
+        for(const p of points){
+          const circle=document.createElementNS("http://www.w3.org/2000/svg","circle");circle.setAttribute("cx",pad+p.x*step);circle.setAttribute("cy",pad+(u-p.y)*step);circle.setAttribute("r","13");circle.setAttribute("fill",p.color);svg.appendChild(circle);
+          const label=document.createElementNS("http://www.w3.org/2000/svg","text");label.textContent=p.label;label.setAttribute("x",pad+p.x*step);label.setAttribute("y",pad+(u-p.y)*step+5);label.setAttribute("text-anchor","middle");label.setAttribute("fill","#06182c");label.setAttribute("font-weight","900");label.setAttribute("font-size","13");svg.appendChild(label);
+        }
+        host.appendChild(svg);
+      }else if(type==="cards"){
+        const suits=["♥","♠","♦","♣"];
+        const n=data.count||5;
+        for(let i=0;i<Math.min(n,10);i++){
+          const c=document.createElement("div"),s=document.createElement("span");
+          c.className="card"+(i%4===0||i%4===2?" red":"");
+          c.textContent=String(i%9+1);
+          s.className="suit";s.textContent=suits[i%4];c.appendChild(s);host.appendChild(c);
+        }
+        if(n>10){const more=document.createElement("span");more.textContent="+"+(n-10);host.appendChild(more)}
+      }else if(type==="suits"){
+        const p=document.createElement("div");p.className="suit-panel";
+        for(const c of ["♥","♠","♦","♣"]){const s=document.createElement("span");s.textContent=c;if(c==="♥"||c==="♦")s.className="red";p.appendChild(s)}host.appendChild(p);
+      }else if(type==="dice"){
+        for(let i=0;i<data.count;i++){const d=document.createElement("span");d.className="die";d.textContent=["⚄","⚅","⚂","⚃"][i%4];host.appendChild(d)}
+      }else if(type==="plate"){
+        const p=document.createElement("div");p.className="plate";
+        const eu=document.createElement("span");eu.className="eu";eu.textContent="🇪🇺 F";
+        const num=document.createElement("span");num.className="number";num.textContent=data.example||"BB-123-AA";
+        p.append(eu,num);host.appendChild(p);
+      }else if(type==="tiles"){
+        for(const ch of data.word){const t=document.createElement("span");t.className="tile";t.textContent=ch;host.appendChild(t)}
+      }else if(type==="code"){
+        for(const ch of data.pattern){const t=document.createElement("span");t.className="tile"+(ch==="?"?" blank":"");t.textContent=ch;host.appendChild(t)}
+      }else if(type==="podium"){
+        const p=document.createElement("div");p.className="podium";
+        for(const [cls,label] of [["second","2"],["first","1"],["third","3"]]){const step=document.createElement("div");step.className="step "+cls;step.textContent=label;p.appendChild(step)}host.appendChild(p);
+      }else{
+        const list=document.createElement("div");list.className="avatars";
+        for(let i=0;i<Math.min(data.count||8,28);i++){const a=document.createElement("span");a.className="avatar";a.textContent=i===0&&data.special?"A":String(i+1);list.appendChild(a)}host.appendChild(list);
+      }
+    }
+    function showView(name){
+      $("menuView").hidden=name!=="menu";$("exerciseView").hidden=name!=="exercise";$("resultView").hidden=name!=="result";
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    function start(level){
+      state.level=level;
+      const deck=shuffle(families[level]);
+      const picks=[],seen=new Set();
+      if(state.length===5){
+        for(const item of deck){if(!seen.has(item.category)){picks.push(item);seen.add(item.category)}if(picks.length===5)break}
+      }else picks.push(...deck.slice(0,10));
+      state.questions=shuffle(picks.map(item=>item.make()));
+      if(state.questions.length!==state.length||state.questions.some(q=>!Number.isSafeInteger(q.answer)||q.answer<0))throw Error("Série invalide");
+      state.index=0;state.attempts=0;state.score=0;state.full=0;state.half=0;state.zero=0;
+      showView("exercise");display();
+    }
+    function display(){
+      const q=state.questions[state.index];
+      state.attempts=0;state.done=false;
+      $("levelLabel").textContent=({easy:"Facile",middle:"Intermédiaire",hard:"Difficile"})[state.level];
+      $("position").textContent="Question "+(state.index+1)+" / "+state.length;
+      $("progressFill").style.width=(100*state.index/state.length)+"%";
+      $("questionText").textContent=q.text;
+      addVisual(q.visual.type,q.visual);
+      $("feedback").hidden=true;$("feedback").className="feedback";
+      $("answerInput").value="";$("answerInput").disabled=false;
+      $("checkButton").disabled=false;$("checkButton").textContent="Valider";
+      $("answerForm").hidden=false;$("skipButton").hidden=false;$("nextButton").hidden=true;
+      $("nextButton").textContent=state.index+1===state.length?"Voir mon score":"Question suivante";
+      $("answerInput").focus();
+    }
+    function feedback(kind,title,text){
+      $("feedback").className="feedback "+kind;
+      $("feedbackTitle").textContent=title;fillMath($("feedbackText"),text);$("feedback").hidden=false;
+    }
+    function complete(points,title,reason){
+      if(state.done)return;
+      state.done=true;state.score+=points;
+      if(points===1)state.full++;else if(points===.5)state.half++;else state.zero++;
+      const q=state.questions[state.index];
+      feedback(points===0?"failure":"success",title,reason+" La réponse est "+format(q.answer)+". "+q.explanation);
+      $("answerInput").disabled=true;$("answerForm").hidden=true;$("skipButton").hidden=true;$("nextButton").hidden=false;$("nextButton").focus();
+    }
+    function validate(){
+      if(state.done)return;
+      const raw=$("answerInput").value.replace(/[\s\u00a0\u202f]/g,"");
+      if(!/^\d+$/.test(raw)||!Number.isSafeInteger(Number(raw))){
+        feedback("hint","Écris un nombre entier","Tu peux utiliser des espaces pour séparer les milliers, par exemple 13 800.");
+        return;
+      }
+      const q=state.questions[state.index],value=Number(raw);
+      if(value===q.answer){
+        complete(state.attempts===0?1:.5,state.attempts===0?"Bonne réponse · 1 point":"Bien corrigé · 0,5 point",state.attempts===0?"Trouvé dès le premier essai.":"L’indice t’a aidé à rectifier.");
+      }else if(state.attempts===0){
+        state.attempts=1;
+        feedback("hint","Essaie encore · 0,5 point possible",q.hint);
+        $("answerInput").select();$("checkButton").textContent="Réessayer";
+      }else complete(0,"Solution · 0 point","Les deux essais ont été utilisés.");
+    }
+    function advance(){
+      if(!state.done)return;
+      if(state.index+1<state.length){state.index++;display();$("exerciseView").scrollIntoView({behavior:"smooth",block:"start"})}
+      else finish();
+    }
+    function finish(){
+      $("resultLevel").textContent=({easy:"Facile",middle:"Intermédiaire",hard:"Difficile"})[state.level]+" · "+state.length+" questions";
+      $("finalScore").textContent=format(state.score)+" / "+state.length;
+      $("resultTitle").textContent=state.score>=state.length*.8?"Défi réussi":state.score>=state.length*.5?"De bons repères":"Une étape de plus";
+      $("resultBreakdown").textContent=state.full+" juste(s) du premier coup · "+state.half+" corrigée(s) après indice · "+state.zero+" solution(s) consultée(s)";
+      showView("result");
+    }
+    function setLength(n){
+      state.length=n;
+      for(const [id,value] of [["fiveButton",5],["tenButton",10]]){
+        const button=$(id),active=value===n;
+        button.classList.toggle("active",active);
+        button.setAttribute("aria-pressed",String(active));
+      }
+    }
+    $("fiveButton").addEventListener("click",()=>setLength(5));
+    $("tenButton").addEventListener("click",()=>setLength(10));
+    $("easyButton").addEventListener("click",()=>start("easy"));
+    $("middleButton").addEventListener("click",()=>start("middle"));
+    $("hardButton").addEventListener("click",()=>start("hard"));
+    $("answerForm").addEventListener("submit",event=>{event.preventDefault();validate()});
+    $("skipButton").addEventListener("click",()=>complete(0,"Solution · 0 point","Tu as choisi de voir la solution."));
+    $("nextButton").addEventListener("click",advance);
+    $("leaveButton").addEventListener("click",()=>showView("menu"));
+    $("againButton").addEventListener("click",()=>start(state.level));
+    $("homeButton").addEventListener("click",()=>showView("menu"));
+  </script>
+</body>
+</html>
