@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexus Arena · Entraînement aléatoire sur les suites</title><style>
+    :root{--bg:#081426;--panel:#142b49;--panel2:#0a1c32;--line:#294461;--text:#f4f8ff;--muted:#b9c7dc;--cyan:#40d9ff;--violet:#aa91ff;--green:#41e69a;--yellow:#ffd369;--red:#ff8190}
+    *{box-sizing:border-box}
+    html{background:var(--bg)}
+    body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5;background:radial-gradient(circle at 12% 5%,rgba(64,217,255,.13),transparent 31rem),radial-gradient(circle at 85% 95%,rgba(170,145,255,.11),transparent 29rem),var(--bg)}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+    [hidden]{display:none!important}
+    .shell{width:min(880px,calc(100% - 24px));margin:0 auto;padding:24px 0 42px}
+    header{display:flex;gap:15px;align-items:center;margin-bottom:22px}
+    .logo{flex:0 0 53px;height:53px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(135deg,var(--cyan),var(--green));color:#061221;font-size:1.4rem;font-weight:950}
+    h1,h2,h3,p{margin-top:0}
+    h1{font-size:clamp(1.45rem,4vw,2.15rem);margin-bottom:0}
+    h2{font-size:clamp(1.28rem,3vw,1.8rem)}
+    .subtitle{color:var(--muted);margin:0}
+    .panel{padding:clamp(18px,4vw,34px);background:linear-gradient(180deg,#142b49,#0e1f37);border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+    .intro,.note{color:var(--muted);max-width:690px}
+    .settings{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:21px 0 25px;padding:14px 16px;border-radius:15px;background:rgba(4,16,31,.5);border:1px solid var(--line)}
+    .settings strong{margin-right:5px}
+    .segmented{display:flex;gap:4px;padding:4px;border-radius:12px;background:#071426}
+    .segmented button{border:0;border-radius:9px;background:transparent;color:var(--muted);padding:8px 13px;font-weight:800}
+    .segmented button.active{background:#285471;color:#fff}
+    .level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .level-card{display:flex;flex-direction:column;gap:10px;padding:19px;background:rgba(7,20,38,.58);border:1px solid var(--line);border-radius:18px;min-height:208px}
+    .level-card:nth-child(2){border-color:#6b59a3}.level-card:nth-child(3){border-color:#b08f50}
+    .level-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(64,217,255,.14);color:var(--cyan);font-size:1.3rem}
+    .level-card:nth-child(2) .level-icon{background:rgba(170,145,255,.15);color:var(--violet)}
+    .level-card:nth-child(3) .level-icon{background:rgba(255,211,105,.14);color:var(--yellow)}
+    .level-card h3{margin:0;font-size:1.18rem}
+    .level-card p{margin:0 0 auto;color:var(--muted);font-size:.92rem}
+    .button{border:0;border-radius:13px;padding:12px 17px;font-weight:850;color:#051827;background:linear-gradient(135deg,var(--cyan),var(--green))}
+    .button:hover{filter:brightness(1.07)}
+    .button.secondary{background:#243d5b;color:var(--text);border:1px solid #3a5778}
+    .button.amber{background:var(--yellow)}
+    .button:disabled{opacity:.5;cursor:not-allowed}
+    .eyebrow{font-size:.81rem;letter-spacing:.075em;text-transform:uppercase;color:var(--cyan);font-weight:850}
+    .topline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .progress-text{color:var(--muted);font-weight:800}
+    .progress{height:9px;background:#061426;border-radius:999px;overflow:hidden;margin:12px 0 22px}
+    .progress div{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .2s}
+    .visual{min-height:116px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;margin:10px 0 20px;padding:15px;background:#091b32;border:1px solid var(--line);border-radius:18px;overflow:auto}
+    .question{font-size:clamp(1.16rem,3vw,1.48rem);line-height:1.45;margin-bottom:18px}
+    .answer-label{display:block;font-weight:800;margin-bottom:8px}
+    .answer-row{display:flex;align-items:stretch;gap:10px}
+    .answer-row input{min-width:0;flex:1;background:#06182c;border:2px solid #466785;color:var(--text);border-radius:13px;padding:11px 15px;font-size:1.18rem}
+    .answer-row input::placeholder{color:#8299b5}
+    .feedback{margin:17px 0 0;padding:16px;border:1px solid var(--line);border-radius:15px;background:#0a1c32}
+    .feedback.hint{border-color:#ad8842}.feedback.success{border-color:var(--green)}.feedback.failure{border-color:var(--red)}
+    .feedback h3{font-size:1.03rem;margin:0 0 5px}
+    .feedback p{margin:0;color:#dfebf9}
+    .actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+    .skip{background:none;border:0;color:var(--muted);font-weight:750;text-decoration:underline;text-underline-offset:3px;padding:8px}
+    .result{text-align:center;padding:18px 0 6px}
+    .score{font-size:clamp(2.4rem,8vw,4.5rem);color:var(--green);font-weight:950;margin:8px 0}
+    .result .breakdown{color:var(--muted)}
+    .result-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:23px}
+    .privacy{margin:18px 3px 0;color:#91a5be;text-align:center;font-size:.83rem}
+    .die{font-size:3.2rem;line-height:1;color:#f7fbff;text-shadow:0 4px 9px rgba(0,0,0,.4)}
+    .die:nth-child(even){color:#85c4ff}
+    .die:nth-child(3){color:#b3a0ff}
+    .die:nth-child(4){color:#ffe192}
+    .card{height:84px;width:60px;border-radius:9px;background:#f5f8fd;color:#12213a;padding:6px 7px;box-shadow:0 6px 15px rgba(0,0,0,.25);display:flex;justify-content:space-between;flex-direction:column;font-size:1.2rem;font-weight:900}
+    .card.red{color:#d53d57}
+    .card .suit{align-self:flex-end;font-size:1.8rem}
+    .tile{display:grid;place-items:center;height:52px;min-width:45px;border-radius:11px;background:#1f4767;border:1px solid #568db3;font-size:1.38rem;font-weight:900}
+    .tile.blank{color:#7195b2}
+    .plate{display:flex;align-items:stretch;border:3px solid #e6e8ed;border-radius:11px;min-height:72px;background:#e9edf3;color:#111c2d;box-shadow:0 8px 16px rgba(0,0,0,.25);overflow:hidden}
+    .plate .eu{display:grid;place-items:center;width:42px;background:#244eaf;color:#ffe479;font-size:.9rem;font-weight:800}
+    .plate .number{align-self:center;padding:8px 18px;font-size:clamp(1.3rem,5vw,2.1rem);font-weight:950;letter-spacing:.06em;white-space:nowrap}
+    .podium{display:flex;align-items:end;gap:7px;height:105px}
+    .step{display:grid;place-items:start center;width:63px;border:1px solid #5b8dad;border-radius:8px 8px 0 0;padding-top:8px;font-weight:950;color:#dcefff}
+    .step.first{height:92px;background:#315d83}.step.second{height:68px;background:#244564}.step.third{height:50px;background:#1b3855}
+    .avatars{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:510px}
+    .avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#234d6e;border:1px solid #5a8caf;font-size:.88rem;font-weight:900}
+    .suit-panel{display:flex;gap:8px;align-items:center;font-size:2.5rem;color:#f5f8fd}
+    .suit-panel .red{color:#fa7185}
+    math{font-family:"Cambria Math","STIX Two Math","DejaVu Serif",serif;vertical-align:middle;font-size:1.08em}
+    @media(max-width:720px){.level-grid{grid-template-columns:1fr}.level-card{min-height:0}.answer-row{flex-direction:column}.actions .button{width:100%}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  
+    .route-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:20px 0}
+    .route-card{border:1px solid var(--line);border-radius:17px;background:rgba(7,20,38,.58);padding:17px;display:flex;flex-direction:column;gap:8px}
+    .route-card h3{margin:0;color:var(--cyan)}.route-card p{margin:0;color:var(--muted);font-size:.92rem}
+    .route-card button{margin-top:auto}.route-card.active{border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
+    .level-grid{margin-top:15px}.level-card{min-height:178px}.level-card button{margin-top:auto}
+    .question-note{font-size:.9rem;color:var(--muted);margin:-8px 0 15px}
+    .plot-wrap{width:100%;overflow:auto;text-align:center}.plot-wrap svg{max-width:100%;height:auto}
+    .visual[hidden]{display:none!important}.fraction-inline{white-space:nowrap}
+    .result-review{text-align:left;margin:25px auto 0;max-width:680px}.result-review details{padding:12px 0;border-top:1px solid var(--line)}.result-review summary{cursor:pointer;font-weight:700}.result-review p{color:var(--muted);margin:8px 0 0}
+    @media(max-width:640px){.route-grid{grid-template-columns:1fr}.shell{width:min(880px,calc(100% - 18px))}.panel{padding:18px}.visual{padding:8px}}
+</style></head><body>
+<main class="shell">
+  <header><div class="logo" aria-hidden="true">N</div><div><h1>Nexus Arena · Défis sur les suites</h1><p class="subtitle">Réponses à saisir · nouvelles situations à chaque partie</p></div></header>
+  <section id="menuView" class="panel">
+    <h2>Choisis ton parcours</h2>
+    <p class="intro">Chaque partie renouvelle les données et l’ordre des questions. Les trois niveaux sont accessibles librement. Une réponse juste du premier coup vaut 1 point ; une réponse corrigée après l’indice vaut 0,5 point.</p>
+    <div class="route-grid" id="routeGrid"></div>
+    <div class="settings"><strong>Durée de la partie</strong><div class="segmented" role="group" aria-label="Nombre de questions"><button type="button" id="fiveButton" class="active" aria-pressed="true">5 questions</button><button type="button" id="tenButton" aria-pressed="false">10 questions</button></div></div>
+    <h2 id="chosenRoute">Parcours 1 à 3</h2>
+    <div class="level-grid">
+      <article class="level-card"><div class="level-icon" aria-hidden="true">●</div><h3>Facile</h3><p>Premiers calculs et lecture attentive.</p><button class="button" data-level="easy" type="button">Commencer</button></article>
+      <article class="level-card"><div class="level-icon" aria-hidden="true">◆</div><h3>Intermédiaire</h3><p>Deux étapes et choix d’une méthode.</p><button class="button" data-level="middle" type="button">Commencer</button></article>
+      <article class="level-card"><div class="level-icon" aria-hidden="true">★</div><h3>Difficile</h3><p>Raisonnement et synthèse.</p><button class="button amber" data-level="hard" type="button">Commencer</button></article>
+    </div>
+  </section>
+  <section id="exerciseView" class="panel" hidden>
+    <div class="topline"><div id="levelLabel" class="eyebrow"></div><div id="position" class="progress-text"></div></div>
+    <div class="progress" aria-label="Progression"><div id="progressFill"></div></div>
+    <div id="visual" class="visual" hidden></div>
+    <h2 id="questionText" class="question"></h2><p id="questionNote" class="question-note"></p>
+    <form id="answerForm" novalidate><label class="answer-label" for="answerInput">Ta réponse</label><div class="answer-row"><input id="answerInput" type="text" autocomplete="off" spellcheck="false" aria-describedby="feedback"><button id="checkButton" class="button" type="submit">Valider</button></div></form>
+    <div id="feedback" class="feedback" role="status" aria-live="polite" hidden><h3 id="feedbackTitle"></h3><p id="feedbackText"></p></div>
+    <div class="actions"><button id="leaveButton" class="button secondary" type="button">Retour au menu</button><button id="skipButton" class="skip" type="button">Voir la solution · 0 point</button><button id="nextButton" class="button" type="button" hidden>Question suivante</button></div>
+  </section>
+  <section id="resultView" class="panel result" hidden><div aria-hidden="true" style="font-size:3rem">✦</div><div id="resultLevel" class="eyebrow"></div><div id="finalScore" class="score"></div><h2 id="resultTitle"></h2><p id="resultBreakdown" class="breakdown"></p><div id="resultReview" class="result-review"></div><div class="result-actions"><button id="againButton" class="button" type="button">Nouvelle série</button><button id="homeButton" class="button secondary" type="button">Choisir un parcours</button></div></section>
+  <p class="privacy">Cette page fonctionne hors connexion. Les réponses et scores ne sont pas envoyés.</p>
+</main><script>"use strict";
+const $=id=>document.getElementById(id);
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[ri(0,a.length-1)];
+const shuffle=a=>{const b=a.slice();for(let i=b.length-1;i>0;i--){const j=ri(0,i);[b[i],b[j]]=[b[j],b[i]]}return b};
+const fr=n=>Number.isInteger(n)?String(n):String(Number(n.toFixed(8))).replace('.',',');
+const Q=(text,answer,hint,explanation,visual=null,note='Réponds par un nombre ; une fraction ou une écriture décimale convient.')=>({text,answer,hint,explanation,visual,note});
+const contexts=['jauge d’énergie','réserve de cristaux','robot explorateur','capteur','stock de ressources','altitude d’un drone'];
+const ctx=()=>pick(contexts);
+const subs=n=>String(n).replace(/0/g,'₀').replace(/1/g,'₁').replace(/2/g,'₂').replace(/3/g,'₃').replace(/4/g,'₄').replace(/5/g,'₅').replace(/6/g,'₆').replace(/7/g,'₇').replace(/8/g,'₈').replace(/9/g,'₉');
+const term=n=>'u'+subs(n);
+const powers=(q,n)=>Math.pow(q,n);
+const yesno='Réponds par « oui » ou « non ».';
+const limnote='Réponds par un nombre, « + infini », « - infini » ou « aucune limite ».';
+const graph=(values,limit=null)=>({type:'scatter',values,limit});
+const scene=(main,small)=>({type:'scene',main,small});
+const series=(values)=>({type:'bars',values});
+
+// Ten independent situation families per parcours. Level changes the data and the reasoning.
+const families={
+  p123:[
+    m=>{const r=(m===2?-1:1)*ri(4+2*m,11+5*m),n=ri(3+m,5+2*m),a=r<0?ri(-r*n+10,-r*n+60):ri(40,110);return Q(`Une ${ctx()} vaut ${a} au rang 0 et varie de ${r} unités à chaque rang. Que vaut ${term(n)} ?`,a+r*n,`Du rang 0 au rang ${n}, la variation se répète ${n} fois.`,`${term(n)}=${a}+${n}×(${r})=${a+r*n}.`,series(Array.from({length:n+1},(_,i)=>a+r*i)))} ,
+    m=>{const r=ri(3+m,9+3*m),n=ri(2+m,5+m),a=ri(10,65),up=a+r*n;return Q(`Une suite augmente de ${r} à chaque rang et ${term(n)}=${up}. Quelle est sa valeur initiale u₀ ?`,a,`Reviens de ${n} rangs en retirant ${n} fois ${r}.`,`u₀=${up}−${n}×${r}=${a}.`,scene('↶',`rang ${n} → rang 0`))},
+    m=>{const a=ri(15,65),r=ri(5+m,14+2*m),k=ri(3+m,6+m),s=a+r*k;return Q(`On donne uₙ=${a}+${r}n. Quel est le premier entier n tel que uₙ>${s} ?`,k+1,`Au rang ${k}, la suite vaut exactement ${s} ; le signe > est strict.`,`u${subs(k)}=${s}, donc le premier rang qui dépasse ${s} est ${k+1}.`)},
+    m=>{const a=ri(2,7),q=m===2?ri(3,4):ri(2,3),n=ri(2+m,3+m);return Q(`Une ${ctx()} contient ${a} unités au rang 0 et est multipliée par ${q} à chaque rang. Que vaut ${term(n)} ?`,a*q**n,`Une multiplication par ${q} a lieu à chaque passage de rang.`,`${term(n)}=${a}×${q}^${n}=${a*q**n}.`,series(Array.from({length:n+1},(_,i)=>a*q**i)))},
+    m=>{const a=ri(3,12),q=pick(m===0?[2,3]:[2,3,4]),n=ri(2,4+m);return Q(`Une suite géométrique vérifie u${subs(n)}=${a*q**n} et u${subs(n+1)}=${a*q**(n+1)}. Quelle est sa raison ?`,q,`Divise le terme suivant par le terme précédent.`,`q=${a*q**(n+1)}/${a*q**n}=${q}.`)},
+    m=>{const a=ri(5,20),r=ri(2+m,8+2*m),N=ri(4+m,6+2*m),last=a+r*(N-1),sum=N*(a+last)/2;return Q(`Les ${N} premières récompenses d’une suite valent ${a}, ${a+r}, ${a+2*r}, …, ${last}. Quelle est leur somme ?`,sum,`Additionne le premier et le dernier terme, puis multiplie par la moitié du nombre de termes.`,`S=${N}×(${a}+${last})/2=${sum}.`,series(Array.from({length:N},(_,i)=>a+r*i)))},
+    m=>{const a=ri(2,6),q=m===2?3:2,N=ri(3+m,4+m),vals=Array.from({length:N},(_,i)=>a*q**i),sum=vals.reduce((x,y)=>x+y,0);return Q(`Une suite de récompenses vaut ${vals.join(', ')}. Quel est le total de ces ${N} termes ?`,sum,`Tu peux additionner les termes affichés ou utiliser une somme géométrique.`,`S=${vals.join(' + ')}=${sum}.`,series(vals))},
+    m=>{const a=ri(25,85),r=pick(m===0?[-5,-3,2,4]:[-9,-6,3,7]),n=ri(3,6);return Q(`Pour tout n≥0, uₙ=${a}${r<0?'−':'+'}${Math.abs(r)}n. La suite est-elle croissante ?` ,r>0?'oui':'non',`Regarde le signe de uₙ₊₁−uₙ.`,`uₙ₊₁−uₙ=${r} ; la suite est ${r>0?'croissante':'décroissante'}.`,null,yesno)},
+    m=>{const a=ri(20,70),r=ri(3,8+m),b=a+ri(3,7)*r;return Q(`On donne uₙ=${a}+${r}n pour n≥0. Le nombre ${b} est-il un majorant de tous les termes ?`,'non',`Une suite dont les termes gagnent ${r}>0 finit par dépasser tout nombre fixé.`,`Non : pour n suffisamment grand, ${a}+${r}n>${b}.`,null,yesno)},
+    m=>{const a=ri(8,25),b=a+ri(8,18),r=ri(2+m,5+2*m),s=ri(1,3+m),k=Math.floor((b-a)/(r+s))+1;return Q(`Deux équipes ont uₙ=${a}+${r}n et vₙ=${b}−${s}n. Quel est le premier rang n≥0 où uₙ>vₙ ?`,k,`Résous (${r}+${s})n>${b-a}, puis prends le premier entier convenable.`,`uₙ>vₙ équivaut à ${r+s}n>${b-a}. Le premier rang est ${k}.`)}
+  ],
+  p45:[
+    m=>{const a=ri(7,30),r=ri(2+m,9+m),start=m===2?ri(1,3):0;return Q(`On veut démontrer P(n) : uₙ=${a}+${r}n pour tout n≥${start}. Quelle valeur la formule doit-elle donner au rang initial ${start} ?`,a+r*start,`Remplace n par ${start} dans la formule à démontrer.`,`Au rang ${start}, ${a}+${r}×${start}=${a+r*start}.`)},
+    m=>{const a=ri(10,35),r=ri(3+m,12+2*m);return Q(`On suppose P(n) : uₙ=${a}+${r}n et l’on sait uₙ₊₁=uₙ+${r}. Dans uₙ₊₁=${a}+${r}n+□, quel nombre remplace □ ?`,r,`Substitue l’expression supposée de uₙ dans la relation.`,`uₙ₊₁=(${a}+${r}n)+${r}.`)},
+    m=>{const a=ri(2,7),q=ri(2,3+m),n=ri(2,4);return Q(`On suppose uₙ=${a}×${q}ⁿ et on sait uₙ₊₁=${q}uₙ. Quelle valeur numérique obtient-on pour u${subs(n+1)} ?`,a*q**(n+1),`Multiplie ${a}×${q}^${n} par ${q}.`,`u${subs(n+1)}=${q}×(${a}×${q}^${n})=${a*q**(n+1)}.`)},
+    m=>{const M=ri(30,65)*2,c=M/2;return Q(`On veut établir 0≤uₙ≤${M}. Si 0≤uₙ≤${M} et uₙ₊₁=uₙ/2+${c}, quel majorant obtient-on pour uₙ₊₁ ?`,M,`Utilise uₙ≤${M} dans la relation, puis calcule ${M}/2+${c}.`,`uₙ₊₁≤${M}/2+${c}=${M}.`)},
+    m=>{const M=ri(20,60)*2,c=M/2;return Q(`On suppose 0≤uₙ≤${M} et uₙ₊₁=uₙ/2+${c}. Quel minorant déduit-on directement pour uₙ₊₁ ?`,c,`Utilise la borne inférieure uₙ≥0.`,`uₙ₊₁=uₙ/2+${c}≥${c}.`)},
+    m=>{const a=ri(2,9),q=ri(2,4),n=ri(2,4);return Q(`Dans une récurrence, P(n) affirme uₙ=${a}×${q}ⁿ. Que vaut le membre de droite de P(${n+1}) ?`,a*q**(n+1),`Remplace l’indice n par ${n+1} dans la propriété.`,`${a}×${q}^${n+1}=${a*q**(n+1)}.`)},
+    m=>{const start=ri(1+m,4+m),a=ri(10,30);return Q(`La suite n’est définie qu’à partir de u${subs(start)}=${a}. On veut prouver une propriété pour tous les rangs où elle est définie. À quel rang faut-il l’initialiser ?`,start,`Initialise au premier rang de définition, pas automatiquement au rang 0.`,`Le premier rang est ${start}.`)},
+    m=>{const a=ri(10,40),r=ri(2,9);return Q(`On a vérifié u₀=${a}, u₁=${a+r} et u₂=${a+2*r}. Cela prouve-t-il, à lui seul, que uₙ=${a}+${r}n pour tout n≥0 ?`,'non',`Trois cas particuliers ne transmettent pas la propriété à tous les rangs.`,`Non : il faut montrer le passage général P(n)⇒P(n+1).`,null,yesno)},
+    m=>{const a=ri(5,25),r=ri(2,8),n=ri(3,6);return Q(`Une preuve a établi P(0) et, pour chaque n≥0, P(n)⇒P(n+1), où P(n) est uₙ=${a}+${r}n. Cette preuve garantit-elle P(${n}) ?`,'oui',`La propriété initiale se transmet successivement à tous les rangs entiers suivants.`,`Oui : le principe de récurrence donne P(n) pour tout n≥0, donc P(${n}).`,null,yesno)},
+    m=>{const a=ri(2,8),r=ri(2,6),n=ri(3+m,5+m);return Q(`Pour prouver par récurrence que uₙ=${a}+${r}n avec uₙ₊₁=uₙ+${r}, un élève obtient uₙ₊₁=${a}+${r}n+${r}. Quelle valeur donne cette expression au rang n=${n} ?`,a+r*n+r,`Remplace n par ${n} dans l’expression du terme suivant.`,`u${subs(n+1)}=${a}+${r}×${n}+${r}=${a+r*(n+1)}.`)}
+  ],
+  p610:[
+    m=>{const L=ri(2,9),a=ri(4,10);return m===2?Q(`Le nuage de points représente uₙ=${L}+${a}(−1)ⁿ/(n+1). Quelle limite suggère-t-il ?`,L,`L’oscillation a une amplitude au plus ${a}/(n+1), qui tend vers 0.`,`Par encadrement, lim (n→+∞) uₙ=${L}.`,graph(Array.from({length:18},(_,n)=>L+a*(-1)**n/(n+1)),L),limnote):Q(`Le nuage de points représente uₙ=${L}+${a}/(n+1). Quelle limite semble-t-il suggérer quand n devient très grand ?`,L,`Le terme ${a}/(n+1) se rapproche de 0.`,`La lecture du nuage est confirmée par la formule : lim (n→+∞) uₙ=${L}+0=${L}.`,graph(Array.from({length:18},(_,n)=>L+a/(n+1)),L),limnote)},
+    m=>{const a=ri(2,5+m),b=ri(1,6),sign=pick([1,-1]);return m===2?Q(`Le nuage de points représente uₙ=${sign<0?'−':''}${a}n²${sign<0?'−':'+'}${b}n. Quelle limite suggère-t-il ?`,sign>0?'+∞':'−∞',`Factorise par n² et étudie le coefficient du terme dominant.`,`Le terme de degré 2 domine : lim (n→+∞) uₙ=${sign>0?'+∞':'−∞'}.`,graph(Array.from({length:13},(_,n)=>sign*(a*n*n+b*n))),limnote):Q(`Le nuage de points représente uₙ=${sign<0?'−':''}${a}n${sign<0?'−':'+'}${b}. Quelle limite suggère-t-il ?`,sign>0?'+∞':'−∞',`Le terme en n domine la constante ; observe aussi le sens du nuage.`,`Comme le coefficient de n est ${sign*a}, la limite est ${sign>0?'+∞':'−∞'}.`,graph(Array.from({length:13},(_,n)=>sign*(a*n+b))),limnote)},
+    m=>{const a=ri(2,7),b=ri(1,4);return Q(`Le nuage représente uₙ=${a}+${b}(−1)ⁿ. Quelle limite cette suite a-t-elle ?`,'aucune',`Sépare mentalement les rangs pairs et impairs.`,`Les termes alternent entre ${a+b} et ${a-b} : il n’y a aucune limite unique.`,graph(Array.from({length:16},(_,n)=>a+b*(-1)**n)),limnote)},
+    m=>{const q=pick(m===2?[-2,-0.5,0.5,2]:[0.5,0.25,2]),a=ri(2,9),answer=Math.abs(q)<1?0:q<0?'aucune':'+∞';return Q(`Quelle est la limite de uₙ=${a}×(${fr(q)})ⁿ ?`,answer,`Étudie la valeur absolue de la raison et, si elle est négative, les signes successifs.`,`Pour q=${fr(q)}, ${Math.abs(q)<1?'la puissance tend vers 0':q<0?'les signes alternent et les valeurs absolues grandissent':'la puissance tend vers +∞'} ; la réponse est ${answerText(answer)}.`,null,limnote)},
+    m=>{const a=ri(2,7),b=ri(2,6),p=m===0?1:2;if(m===2){const c=ri(2,5);return Q(`Pour n≥1, quelle est la limite de uₙ=(${a}n²+${b}n)/(${c}n²+n) ?`,a/c,`Factorise par n² au numérateur et au dénominateur.`,`uₙ=(${a}+${b}/n)/(${c}+1/n), donc lim (n→+∞) uₙ=${a}/${c}.`,null,limnote)}return Q(`Pour n≥1, quelle est la limite de uₙ=(${a}n^${p}+${b})/(n^${p}+1) ?`,a,`Divise numérateur et dénominateur par n^${p}.`,`uₙ=(${a}+${b}/n^${p})/(1+1/n^${p}), donc lim (n→+∞) uₙ=${a}.`,null,limnote)},
+    m=>{const a=ri(2+m,6+m),b=ri(2,8);return m===2?Q(`Pour n≥1, quelle est la limite de uₙ=(n²+${b}n)−(n²+${a+b}n) ?`,'−∞',`La lecture directe est une forme ∞−∞. Regroupe les termes semblables.`,`uₙ=−${a}n ; donc lim (n→+∞) uₙ=−∞.`,null,limnote):Q(`Pour n≥1, quelle est la limite de uₙ=n²−${a}n+${b} ?`,'+∞',`Factorise par n², le terme prépondérant.`,`uₙ=n²(1−${a}/n+${b}/n²). La parenthèse tend vers 1, donc lim (n→+∞) uₙ=+∞.`,null,limnote)},
+    m=>{const a=ri(2,8),b=ri(2,6);return Q(`Pour n≥1, quelle est la limite de uₙ=(${a}/n)/(1/(n+${b})) ?`,a,`Multiplie par l’inverse du dénominateur.`,`uₙ=${a}(n+${b})/n=${a}+${a*b}/n, donc lim (n→+∞) uₙ=${a}.`,null,limnote)},
+    m=>{const L=ri(2,9),a=ri(2,7);return Q(`Pour tout n≥0, ${L}−${a}/(n+1)≤uₙ≤${L}+${a}/(n+1). Quelle est la limite de uₙ ?`,L,`Les deux bornes tendent vers le même nombre.`,`Par le théorème des gendarmes, lim (n→+∞) uₙ=${L}.`,null,limnote)},
+    m=>{const M=ri(8,20);return Q(`Une suite est croissante et majorée par ${M}. Peut-on conclure que sa limite vaut nécessairement ${M} ?`,'non',`Le théorème de convergence monotone donne l’existence d’une limite, pas forcément sa valeur.`,`Non. Une suite croissante peut converger vers un nombre strictement inférieur à ${M}.`,null,yesno)},
+    m=>{const a=ri(2,8),b=ri(1,5+m);return Q(`Pour n≥1, quelle est la limite de uₙ=n×(${a}/(n+${b})) ?`,a,`Le produit présente deux comportements opposés. Réécris-le en divisant par n.`,`uₙ=${a}/(1+${b}/n), donc lim (n→+∞) uₙ=${a}.`,null,limnote)}
+  ],
+  p11:[
+    m=>{const a=ri(15,45),r=ri(3+m,9+m),k=ri(3,7),target=a+r*k;return Q(`Un stock suit uₙ=${a}+${r}n. Quel est le premier rang où uₙ≥${target} ?`,k,`Ici l’égalité au seuil est autorisée.`,`u${subs(k)}=${target} ; le premier rang convenable est ${k}.`,series(Array.from({length:k+2},(_,n)=>a+r*n)))},
+    m=>{const a=ri(70,130),r=ri(4+m,10+2*m),k=ri(3,6),target=a-r*k;return Q(`Une batterie suit uₙ=${a}−${r}n. Quel est le premier rang où uₙ<${target} ?`,k+1,`Au rang ${k}, la batterie vaut exactement ${target} ; le seuil est strict.`,`u${subs(k)}=${target}, puis u${subs(k+1)}=${target-r}<${target}. Le premier rang est ${k+1}.`)},
+    m=>{const a=ri(2,7),q=ri(2,3+m),k=ri(2,4),target=a*q**k;return Q(`Une population est donnée par uₙ=${a}×${q}ⁿ. Quel est le premier rang où uₙ>${target} ?`,k+1,`La suite augmente et u${subs(k)} atteint exactement ${target}.`,`u${subs(k)}=${target} ; le premier rang strictement au-dessus est ${k+1}.`)},
+    m=>{const a=ri(3,10)*2**(3+m),k=ri(2,3+m),target=a/2**k;return Q(`Une énergie restante suit uₙ=${a}×(1/2)ⁿ. Quel est le premier rang où uₙ<${fr(target)} ?`,k+1,`Au rang ${k}, l’énergie vaut exactement le seuil.`,`u${subs(k)}=${fr(target)} et la suite décroît : premier rang strictement inférieur, ${k+1}.`)},
+    m=>{const k=ri(2,4),q=m===2?.75:.5,gap=m===2?ri(2,4)*4**k:ri(8,20)*2,L=gap+ri(50,110),target=L-gap*q**k;return Q(`Un capteur suit uₙ=${L}−${gap}×(${fr(q)})ⁿ. Quel est le premier rang où uₙ≥${fr(target)} ?`,k,`La suite augmente ; vérifie la valeur exactement au rang ${k}.`,`u${subs(k)}=${fr(target)}. Comme le signe est ≥, le premier rang est ${k}.`)},
+    m=>{const a=ri(10,40),r=ri(3,10),k=ri(4,7),target=a+r*k;return Q(`On donne uₙ=${a}+${r}n. Quel est le premier rang n≥0 pour lequel uₙ>${target} ?`,k+1,`Au rang ${k}, on atteint exactement le seuil ; le signe est strict.`,`u${subs(k)}=${target} ; le premier rang au-dessus est ${k+1}.`)},
+    m=>{const k=ri(2,4),q=m===2?.75:.5,gap=m===2?ri(2,5)*4**k:ri(8,20)*2,L=m===2?gap+ri(100,170):ri(40,70)*2,threshold=L-gap*q**k;return Q(`Une jauge vérifie uₙ=${L}−${gap}×(${fr(q)})ⁿ. Quel est le premier rang où uₙ>${fr(threshold)} ?`,k+1,`Le seuil est atteint exactement au rang ${k} ; il faut le dépasser.`,`u${subs(k)}=${fr(threshold)} et la suite est croissante ; premier rang : ${k+1}.`)},
+    m=>{const L=ri(40,80)*2,gap=ri(10,30);return Q(`Le nuage représente uₙ=${L}−${gap}×(1/2)ⁿ. Existe-t-il un rang fini où la jauge atteint le seuil ${L} ?`,'non',`L’écart au seuil vaut ${gap}×(1/2)ⁿ, toujours strictement positif.`,`Non : uₙ<${L} pour tout rang n, même si lim (n→+∞) uₙ=${L}.`,graph(Array.from({length:15},(_,n)=>L-gap/2**n),L),yesno)},
+    m=>{const a=ri(20,50),r=ri(3,7),k=ri(3,6),threshold=a+r*k;return Q(`Un programme augmente la variable u de ${r}, en partant de ${a}, jusqu’à ce que u>${threshold}. Combien de tours de boucle faut-il ?`,k+1,`Au bout de ${k} tours, u=${threshold}. La boucle doit encore tourner une fois.`,`Après ${k+1} tours, u=${a}+${k+1}×${r}=${a+(k+1)*r}>${threshold}.`)},
+    m=>{const k=ri(3,5),q=m===2?.75:.5,gap=m===2?ri(2,4)*4**k:ri(6,18),L=gap+ri(40,100),target=L-gap*q**k;return Q(`Un robot a uₙ=${L}−${gap}×(${fr(q)})ⁿ. Le seuil strict uₙ>${fr(target)} est-il atteint dès le rang ${k} ?`,'non',`Calcule u${subs(k)} et compare-le au seuil avec le signe strict.`,`Non : u${subs(k)}=${fr(target)}. L’égalité ne suffit pas pour >.`,null,yesno)}
+  ]
+};
+
+const state={route:'p123',level:null,length:5,questions:[],index:0,attempts:0,done:false,score:0,full:0,half:0,zero:0,review:[]};
+const routeNames={p123:'Parcours 1 à 3',p45:'Parcours 4 et 5',p610:'Parcours 6 à 10',p11:'Parcours 11'};
+const routeThemes={p123:'Types de suites et variations',p45:'Récurrence',p610:'Limites',p11:'Seuils'};
+const levelNames={easy:'Facile',middle:'Intermédiaire',hard:'Difficile'};
+function makeSvg(tag,attributes={},text=''){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for(const [k,v] of Object.entries(attributes))el.setAttribute(k,String(v));
+  if(text)el.textContent=text;return el;
+}
+function drawPlot(data,bars=false){
+  const host=$('visual'),values=data.values,W=620,H=292,left=66,right=22,top=22,bottom=46,innerW=W-left-right,innerH=H-top-bottom;
+  let ymin=Math.min(...values),ymax=Math.max(...values);
+  if(bars){ymin=Math.min(0,ymin);ymax=Math.max(0,ymax)}
+  const pad=Math.max(1,(ymax-ymin)*.12);ymin-=pad;ymax+=pad;
+  const y=v=>top+innerH-(v-ymin)/(ymax-ymin)*innerH;
+  const x=i=>left+innerW*(i+.5)/values.length;
+  const svg=makeSvg('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':bars?'Diagramme des termes de la suite':'Nuage de points des termes de la suite'});
+  for(let j=0;j<=4;j++){
+    const v=ymin+(ymax-ymin)*j/4,yp=y(v);
+    svg.appendChild(makeSvg('line',{x1:left,y1:yp,x2:W-right,y2:yp,stroke:'#355473','stroke-width':1}));
+    const tick=Number(v.toFixed(ymax-ymin<8?1:0));
+    svg.appendChild(makeSvg('text',{x:left-7,y:yp+4,'text-anchor':'end',fill:'#b9c7dc','font-size':12},fr(tick)));
+  }
+  svg.appendChild(makeSvg('line',{x1:left,y1:top,x2:left,y2:top+innerH,stroke:'#a6c6dd','stroke-width':2}));
+  svg.appendChild(makeSvg('line',{x1:left,y1:top+innerH,x2:W-right,y2:top+innerH,stroke:'#a6c6dd','stroke-width':2}));
+  const step=values.length<=9?1:values.length<=17?2:3;
+  for(let i=0;i<values.length;i+=step)svg.appendChild(makeSvg('text',{x:x(i),y:H-20,'text-anchor':'middle',fill:'#b9c7dc','font-size':12},String(i)));
+  svg.appendChild(makeSvg('text',{x:W-11,y:H-20,'text-anchor':'end',fill:'#40d9ff','font-size':14,'font-weight':800},'n'));
+  svg.appendChild(makeSvg('text',{x:19,y:16,fill:'#40d9ff','font-size':14,'font-weight':800},'uₙ'));
+  values.forEach((v,i)=>{
+    if(bars){const base=y(0),yp=y(v),width=Math.min(36,innerW/values.length*.65);svg.appendChild(makeSvg('rect',{x:x(i)-width/2,y:Math.min(yp,base),width,height:Math.max(2,Math.abs(base-yp)),rx:4,fill:'#3489ad'}))}
+    svg.appendChild(makeSvg('circle',{cx:x(i),cy:y(v),r:5,fill:i%2?'#aa91ff':'#40d9ff',stroke:'#081426','stroke-width':1.5}));
+  });
+  const wrap=document.createElement('div');wrap.className='plot-wrap';wrap.appendChild(svg);host.appendChild(wrap);
+}
+function showVisual(v){
+  const host=$('visual');host.replaceChildren();host.hidden=!v;if(!v)return;
+  if(v.type==='scatter')drawPlot(v,false);
+  else if(v.type==='bars')drawPlot(v,true);
+  else{const icon=document.createElement('div'),label=document.createElement('div');icon.style.cssText='font-size:3rem;color:var(--cyan);font-weight:900';icon.textContent=v.main;label.style.cssText='color:var(--muted);font-weight:750';label.textContent=v.small;host.append(icon,label)}
+}
+function showView(name){
+  $('menuView').hidden=name!=='menu';$('exerciseView').hidden=name!=='exercise';$('resultView').hidden=name!=='result';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setupRoutes(){
+  const host=$('routeGrid');
+  for(const [id,name] of Object.entries(routeNames)){
+    const card=document.createElement('article'),h=document.createElement('h3'),p=document.createElement('p'),b=document.createElement('button');
+    card.className='route-card';card.dataset.route=id;h.textContent=name;p.textContent=routeThemes[id]+' · trois niveaux · 5 ou 10 questions';b.className='button secondary';b.type='button';b.textContent='Choisir';b.addEventListener('click',()=>chooseRoute(id));card.append(h,p,b);host.appendChild(card);
+  }
+  chooseRoute('p123');
+}
+function chooseRoute(id){
+  state.route=id;$('chosenRoute').textContent=routeNames[id]+' · '+routeThemes[id];
+  for(const card of document.querySelectorAll('.route-card')){
+    const active=card.dataset.route===id;card.classList.toggle('active',active);
+    const button=card.querySelector('button');button.textContent=active?'Sélectionné':'Choisir';button.setAttribute('aria-pressed',String(active));
+  }
+}
+function setLength(n){
+  state.length=n;
+  for(const [id,v] of [['fiveButton',5],['tenButton',10]]){$(id).classList.toggle('active',v===n);$(id).setAttribute('aria-pressed',String(v===n))}
+}
+function start(level){
+  const m={easy:0,middle:1,hard:2}[level];if(m===undefined)throw Error('Niveau inconnu');
+  state.level=level;
+  const templates=shuffle(families[state.route]).slice(0,state.length);
+  state.questions=shuffle(templates.map(fn=>fn(m)));
+  if(state.questions.length!==state.length||state.questions.some(q=>typeof q.text!=='string'||!q.text||!q.explanation||!(typeof q.answer==='string'||Number.isFinite(q.answer))))throw Error('Série invalide');
+  state.index=0;state.attempts=0;state.done=false;state.score=0;state.full=0;state.half=0;state.zero=0;state.review=[];
+  showView('exercise');display();
+}
+function display(){
+  const q=state.questions[state.index];state.attempts=0;state.done=false;
+  $('levelLabel').textContent=routeNames[state.route]+' · '+levelNames[state.level];
+  $('position').textContent=`Question ${state.index+1} / ${state.length}`;
+  $('progressFill').style.width=(100*state.index/state.length)+'%';
+  $('questionText').textContent=q.text;$('questionNote').textContent=q.note;showVisual(q.visual);
+  $('answerInput').value='';$('answerInput').disabled=false;$('answerInput').placeholder=typeof q.answer==='number'?'Ex. 12 ou 3/4':'Écris ta réponse';
+  $('answerForm').hidden=false;$('checkButton').disabled=false;$('checkButton').textContent='Valider';
+  $('feedback').hidden=true;$('feedback').className='feedback';$('skipButton').hidden=false;$('nextButton').hidden=true;
+  $('nextButton').textContent=state.index+1===state.length?'Voir mon score':'Question suivante';
+  $('answerInput').focus();
+}
+function normalized(raw){return raw.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s\u00a0\u202f]/g,'').replace(/−/g,'-').replace(/,/g,'.')}
+function numberInput(raw){
+  const s=normalized(raw);
+  if(/^[-+]?\d+(?:\.\d+)?$/.test(s))return Number(s);
+  const f=/^([-+]?\d+)\/([-+]?\d+)$/.exec(s);if(f&&Number(f[2])!==0)return Number(f[1])/Number(f[2]);
+  return NaN;
+}
+function isCorrect(raw,answer){
+  if(typeof answer==='number'){const v=numberInput(raw);return Number.isFinite(v)&&Math.abs(v-answer)<=1e-8*Math.max(1,Math.abs(answer))}
+  const s=normalized(raw);
+  if(answer==='+∞')return ['+∞','∞','+infini','infini','plusinfini','+infinity','infinity'].includes(s);
+  if(answer==='−∞')return ['-∞','-infini','moinsinfini','-infinity'].includes(s);
+  if(answer==='aucune')return ['aucune','aucunelimite','pasdelimite','divergente','diverge'].includes(s);
+  return s===normalized(answer);
+}
+function answerText(answer){
+  if(typeof answer==='number'){
+    if(Number.isInteger(answer))return fr(answer);
+    for(let d=2;d<=12;d++){const n=Math.round(answer*d);if(Math.abs(answer-n/d)<1e-10)return `${n}/${d}`}
+    return fr(answer);
+  }
+  return answer==='aucune'?'aucune limite':answer==='+∞'?'+ infini':answer==='−∞'?'- infini':answer;
+}
+function feedback(kind,title,text){$('feedback').className='feedback '+kind;$('feedbackTitle').textContent=title;$('feedbackText').textContent=text;$('feedback').hidden=false}
+function complete(points,title,reason){
+  if(state.done)return;state.done=true;state.score+=points;
+  if(points===1)state.full++;else if(points===.5)state.half++;else state.zero++;
+  const q=state.questions[state.index];state.review.push({question:q.text,points,answer:answerText(q.answer),explanation:q.explanation});
+  feedback(points===0?'failure':'success',title,reason+' Réponse : '+answerText(q.answer)+'. '+q.explanation);
+  $('answerInput').disabled=true;$('answerForm').hidden=true;$('skipButton').hidden=true;$('nextButton').hidden=false;$('nextButton').focus();
+}
+function validate(){
+  if(state.done)return;
+  const q=state.questions[state.index],raw=$('answerInput').value.trim();
+  if(!raw){feedback('hint','Réponse attendue','Écris une réponse avant de valider.');return}
+  if(typeof q.answer==='number'&&!Number.isFinite(numberInput(raw))){feedback('hint','Format de réponse','Écris un nombre, par exemple 12, 0,5 ou 3/4.');return}
+  if(isCorrect(raw,q.answer))complete(state.attempts===0?1:.5,state.attempts===0?'Bonne réponse · 1 point':'Bien corrigé · 0,5 point',state.attempts===0?'Trouvé dès le premier essai.':'L’indice t’a aidé à rectifier.');
+  else if(state.attempts===0){state.attempts=1;feedback('hint','Essaie encore · 0,5 point possible',q.hint);$('answerInput').select();$('checkButton').textContent='Réessayer'}
+  else complete(0,'Solution · 0 point','Les deux essais ont été utilisés.');
+}
+function advance(){if(!state.done)return;if(state.index+1<state.length){state.index++;display();$('exerciseView').scrollIntoView({behavior:'smooth',block:'start'})}else finish()}
+function finish(){
+  $('resultLevel').textContent=routeNames[state.route]+' · '+levelNames[state.level]+' · '+state.length+' questions';
+  $('finalScore').textContent=fr(state.score)+' / '+state.length;
+  $('resultTitle').textContent=state.score>=state.length*.8?'Défi réussi':state.score>=state.length*.5?'De bons repères':'Continue à t’entraîner';
+  $('resultBreakdown').textContent=`${state.full} juste(s) du premier coup · ${state.half} corrigée(s) après indice · ${state.zero} solution(s) consultée(s)`;
+  const review=$('resultReview');review.replaceChildren();const heading=document.createElement('h3');heading.textContent='Revoir les réponses';review.appendChild(heading);
+  state.review.forEach((r,i)=>{const details=document.createElement('details'),summary=document.createElement('summary'),p=document.createElement('p');summary.textContent=`${i+1}. ${r.question} — ${fr(r.points)} pt`;p.textContent=`Réponse : ${r.answer}. ${r.explanation}`;details.append(summary,p);review.appendChild(details)});
+  showView('result');
+}
+setupRoutes();
+$('fiveButton').addEventListener('click',()=>setLength(5));$('tenButton').addEventListener('click',()=>setLength(10));
+document.querySelectorAll('[data-level]').forEach(button=>button.addEventListener('click',()=>start(button.dataset.level)));
+$('answerForm').addEventListener('submit',e=>{e.preventDefault();validate()});
+$('skipButton').addEventListener('click',()=>complete(0,'Solution · 0 point','Tu as choisi de voir la solution.'));
+$('nextButton').addEventListener('click',advance);$('leaveButton').addEventListener('click',()=>showView('menu'));
+$('againButton').addEventListener('click',()=>start(state.level));$('homeButton').addEventListener('click',()=>showView('menu'));
+</script></body></html>
