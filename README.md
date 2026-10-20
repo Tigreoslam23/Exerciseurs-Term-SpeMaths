@@ -9,3 +9,11 @@ Quatre groupes de parcours sont proposés : 1 à 3 (types de suites et variation
 Une réponse juste du premier coup vaut 1 point. Après une erreur, un indice permet de corriger pour 0,5 point. Sinon, la question vaut 0 point. Le score et les corrections sont affichés à la fin.
 
 Pour les limites infinies, saisir `+ infini` ou `- infini` ; `aucune limite` est également accepté.
+
+## Dérive Lab — le jeu des dérivées
+
+Application TypeScript / React avec 24 compétences à débloquer, des exercices aléatoires, une construction de la dérivée par étapes et un clavier mathématique.
+
+- [Jouer à Dérive Lab](https://tigreoslam23.github.io/Exerciseurs-Term-SpeMaths/derive-lab/)
+- [Code source et mode d’emploi](derive-lab/README.md)
+

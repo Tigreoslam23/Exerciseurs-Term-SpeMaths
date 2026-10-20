@@ -1,0 +1,17 @@
+{
+  "name": "derive-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Jeu de dérivation pour le lycée, avec 24 compétences à débloquer.",
+  "scripts": {
+    "dev": "node serve.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "esbuild": "0.24.0",
+    "typescript": "5.6.3"
+  }
+}
