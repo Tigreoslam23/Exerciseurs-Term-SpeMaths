@@ -355,12 +355,12 @@ function makeTask(id: string, first = false): Exercise {
  const r=(lo=2,hi=7)=>Math.floor(Math.random()*(hi-lo+1))+lo;
  const a=first?4:r(),b=r(),c=r(),n=r(3,6),xp=k=>k===0?"1":k===1?"x":`x^${k}`;
  const poly=(cs)=>cs.map((v,k)=>[v,k]).reverse().filter(([v])=>v!==0).map(([v,k],i)=>(v<0?"-":i?"+":"")+(k===0?Math.abs(v):((Math.abs(v)===1?"":Math.abs(v)+"*")+xp(k)))).join("")||"0";
- const choices=(ans,wrong)=>{
+ const choices=(ans: string,wrong: string[])=>{
  const list=Array.from(new Set([ans,...wrong])).slice(0,6);
  for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]];}
  return list;
 };
- const step=(kind,prompt,expected,prefix,suffix,hint,wrong,solved)=>({kind,prompt,expected,prefix,suffix,hint,choices:choices(expected,wrong||[]),solved:solved||prefix+expected+suffix});
+ const step=(kind: StepKind,prompt: string,expected: string,prefix: string,suffix: string,hint: string,wrong: string[]=[],solved?: string): Step=>({kind,prompt,expected,prefix,suffix,hint,choices:choices(expected,wrong||[]),solved:solved||prefix+expected+suffix});
  const orbit=(ans,hint,prefix="f'(x) = ",suffix="",wrong=["0","1","x","x^2","2*x","-1/x^2"])=>step("orbit","Choisis la bonne dérivée.",ans,prefix,suffix,hint,wrong);
  const input=(expected,prefix="f'(x) = ",suffix="",hint="Effectue le calcul, puis simplifie.")=>step("input","À toi de simplifier.",expected,prefix,suffix,hint);
  const rule=(ans,hint)=>step("rule","Quelle règle faut-il utiliser ?",ans,"","",hint,["u'+v'","u'v+uv'","(u'v-uv')/v^2","u'×g'(u)"],"Règle : "+ans);
