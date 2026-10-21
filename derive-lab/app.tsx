@@ -753,7 +753,7 @@ function DeriveLab() {
                 {exercise.steps.slice(0,done?exercise.steps.length:index).map((s,i)=>
                   <React.Fragment key={i}>
                     {s.kind==="move"&&<div className="pastline identification-summary"><span className="tick">✓</span><MathText text={"k = "+exercise.coefficient+" ; u(x) = "+exercise.base}/></div>}
-                    <div className="pastline"><span className="tick">✓</span><MathText text={s.solved}/></div>
+                    <div className="pastline"><span className="tick">✓</span><MathText text={s.solved} compact={i===exercise.steps.length-1}/></div>
                   </React.Fragment>
                 )}
 
@@ -773,20 +773,20 @@ function DeriveLab() {
 
                   {current.kind==="input"&&<div className="math-completion" ref={completionRef}>
                     <div className="working">
-                      <MathText text={current.prefix+"□"+current.suffix} slot={
-                        <span className={"answer-shell"+(/[\/^]/.test(answer)?" typeset":"")}>
+                      <MathText text={current.prefix+"□"+current.suffix} compact={index===exercise.steps.length-1} slot={
+                        <span className={"answer-shell"+(answer?" typeset":"")}>
                           <input className="answer" ref={inputRef} value={answer.replace(/\*/g,"×").replace(/-/g,"−")}
                             style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
                             aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder=""
                             readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
                             onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
                             onKeyDown={handleAnswerKey}/>
-                          {/[\/^]/.test(answer)&&<span className="answer-render" aria-hidden="true"><MathText text={answer}/></span>}
+                          {answer&&<span className="answer-render" aria-hidden="true"><MathText text={answer} compact={index===exercise.steps.length-1}/></span>}
                         </span>
                       }/>
                     </div>
                     <p className="input-help" id="math-input-help">Utilise le clavier maths juste en dessous. Touche la case pour placer le curseur.</p>
-                    {answer&&<div className="input-reading">Lecture : <MathText text={current.prefix+answer+current.suffix}/></div>}
+                    {answer&&<div className="input-reading">Lecture : <MathText text={current.prefix+answer+current.suffix} compact={index===exercise.steps.length-1}/></div>}
                     {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
                     {hint&&<div className="hintbox"><MathText text={current.hint}/></div>}
                     <section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
@@ -825,7 +825,7 @@ function DeriveLab() {
                 </>:<div className="success" role="status">
                   <span className="earned">{exploring?"EXPLORATION":"+ "+earned+" XP"}</span>
                   <h2>Dérivée reconstruite.</h2>
-                  <div className="result"><MathText text={"f'(x) = "+exercise.final}/></div>
+                  <div className="result"><MathText text={"f'(x) = "+exercise.final} compact/></div>
                   <p>{exploring?"Tu peux essayer cet atelier librement. Les déblocages se gagnent dans le parcours.":
                     !hadError&&!usedHelp?"Sans erreur et sans indice. Une réussite de plus vers la suite du parcours.":
                     "Les étapes sont maintenant en place. Essaie la prochaine fonction sans aide."}</p>

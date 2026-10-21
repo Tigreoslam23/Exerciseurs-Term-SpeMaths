@@ -230,3 +230,12 @@ body{margin:0;background:#0b0e17}
 .derive .apply-under{display:flex;justify-content:center;margin-top:17px}
 .derive .apply-under .apply-factor-rule{width:auto;max-width:100%;min-height:37px;padding:8px 14px;font-size:11px;gap:7px;border-radius:9px}
 @container(max-width:470px){.derive .function-line.identifying{grid-template-columns:1fr}.derive .function-line.identifying .factor-identification{width:100%}.derive .function-line.identifying .original{font-size:30px;margin-top:0}.derive .function-line.identifying{gap:10px}.derive .apply-under{margin-top:13px}}
+
+/* Computer Modern : chiffres droits, variables italiques et vraie prime. */
+.derive{--math-font:"Derive Math",serif}
+.derive .math,.derive .answer,.derive .drop,.derive .factor-times{font-family:var(--math-font);font-style:normal;font-weight:400;font-synthesis:none}
+.derive .math-identifier{font-style:italic}
+.derive .math-literal{font-style:normal}
+.derive .math-primed{display:inline-block;white-space:nowrap;padding-right:.035em}
+.derive sup.math-prime{display:inline-block;font-family:var(--math-font);font-style:normal;font-size:.72em;line-height:0;vertical-align:.42em;margin-left:.12em;margin-right:.04em}
+.derive .result>.math{white-space:nowrap}

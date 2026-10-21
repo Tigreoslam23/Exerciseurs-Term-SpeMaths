@@ -83,8 +83,30 @@ const hasFraction=(nodes:DisplayNode[]):boolean=>nodes.some(node=>node.type==="f
   (node.type==="power"&&(hasFraction([node.base])||hasFraction(node.exponent)))||
   (node.type==="prime"&&hasFraction([node.base])));
 
-export function MathText({text,slot}:{text:string;slot?:React.ReactNode}){
+// La juxtaposition est réservée aux facteurs non ambigus ; 2*3 reste 2 × 3.
+export function compactMath(source:string):string{
+  return source.replace(/([0-9a-z)²³])\s*[*×·]\s*(?=[a-z(√□])/gi,"$1")
+    .replace(/(□)\s*[*×·]\s*(?=[a-z(√])/gi,"$1");
+}
+
+export function MathText({text,slot,compact=false}:{text:string;slot?:React.ReactNode;compact?:boolean}){
+  const display=compact?compactMath(text):text;
   function render(nodes:DisplayNode[]):React.ReactNode[]{
+    if(compact){
+      const hidden=new Set<number>();
+      nodes.forEach((node,i)=>{
+        if(node.type!=="operator"||node.text!=="×")return;
+        let left=i-1,right=i+1;
+        while(nodes[left]?.type==="space")left--;
+        while(nodes[right]?.type==="space")right++;
+        const a=nodes[left],b=nodes[right];
+        if(!factor(a)||!factor(b))return;
+        // La juxtaposition de deux nombres changerait leur valeur.
+        if(a.type==="atom"&&b.type==="atom"&&/^[\d.,]+$/.test(a.text)&&/^[\d.,]+$/.test(b.text))return;
+        for(let j=left+1;j<right;j++)hidden.add(j);
+      });
+      nodes=nodes.filter((_,i)=>!hidden.has(i));
+    }
     return nodes.map((node,i)=>{
       if(node.type==="fraction")return <span className="math-frac" key={i}>
         <span className="math-numerator">{render(node.numerator)}</span>
@@ -94,10 +116,10 @@ export function MathText({text,slot}:{text:string;slot?:React.ReactNode}){
         <span className="math-delimiter">(</span><span>{render(node.children)}</span>{node.closed&&<span className="math-delimiter">)</span>}
       </span>;
       if(node.type==="power")return <React.Fragment key={i}>{render([node.base])}<sup>{render(node.exponent)}</sup></React.Fragment>;
-      if(node.type==="prime")return <React.Fragment key={i}>{render([node.base])}<span className="math-prime">{node.mark}</span></React.Fragment>;
+      if(node.type==="prime")return <span className="math-primed" key={i}>{render([node.base])}<sup className="math-prime">′</sup></span>;
       if(node.type==="atom"&&node.text==="□"&&slot)return <React.Fragment key={i}>{slot}</React.Fragment>;
-      return <React.Fragment key={i}>{node.text}</React.Fragment>;
+      return <span key={i} className={node.type==="atom"&&/^[a-z]+$/i.test(node.text)&&/^[fxuvkndge]+$/.test(node.text)?"math-identifier":"math-literal"}>{node.text}</span>;
     });
   }
-  return <span className="math" role={slot?undefined:"math"} aria-label={slot?undefined:text}>{render(parseMathDisplay(text))}</span>;
+  return <span className="math" role={slot?undefined:"math"} aria-label={slot?undefined:display}>{render(parseMathDisplay(text))}</span>;
 }

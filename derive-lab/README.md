@@ -85,3 +85,9 @@ Sur les écrans suffisamment larges, le bloc d’identification k × u(x) est di
 ## Saisie des dérivées
 
 Chaque dérivée intermédiaire se complète librement avec le clavier mathématique sous la ligne, sans carrousel ni point d’interrogation. La validation accepte les écritures mathématiquement équivalentes (par exemple `2x`, `2*x` ou `x+x`). Une erreur conserve la saisie et l’étape pour permettre la correction ; une réponse correcte ouvre une case vide sur la ligne de simplification suivante. Le choix de la règle et l’identification de k et u(x) sont conservés.
+
+## Typographie mathématique
+
+Les formules et les touches utilisent les fontes Computer Modern distribuées avec KaTeX 0.16.22 : chiffres droits, variables italiques et vraie prime en exposant avec un espacement dédié. Seules les fontes sont embarquées, dans `math-fonts.css` ; le moteur de rendu structuré de l’application reste utilisé. La licence figure dans `MATH-FONTS-LICENSE.txt`. Aucune police distante n’est chargée.
+
+Les résultats finaux et leur dernière ligne de calcul utilisent la juxtaposition (`3x²+14x+3`, `8x`, `4eˣ`). Les étapes intermédiaires conservent × pour expliciter la méthode. Les fractions, puissances et groupements restent structurés ; deux facteurs numériques ne sont jamais concaténés. Les fichiers du jeu, des styles et des fontes ont une URL versionnée et sont préchargés dans le cache hors connexion.
