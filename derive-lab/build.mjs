@@ -5,8 +5,10 @@ await build({entryPoints:["app.tsx"],outfile:"app.js",bundle:true,format:"iife",
 const resources=["app.js","styles.css","index.html","bootstrap.js","manifest.webmanifest"];
 const hash=createHash("sha256");
 for(const file of resources)hash.update(await readFile(file));
+const workerSource=await readFile("sw.js","utf8");
+hash.update(workerSource.replace(/const CACHE_NAME = "[^\"]+";/,'const CACHE_NAME = "";'));
 const version=hash.digest("hex").slice(0,16);
-const worker=(await readFile("sw.js","utf8")).replace(/const CACHE_NAME = "[^"]+";/,'const CACHE_NAME = "derive-lab-'+version+'";');
+const worker=workerSource.replace(/const CACHE_NAME = "[^"]+";/,'const CACHE_NAME = "derive-lab-'+version+'";');
 await writeFile("sw.js",worker);
 await mkdir("dist",{recursive:true});
 for(const file of [...resources,"sw.js","icon-192.png","icon-512.png","icon-maskable.png","apple-touch-icon.png"])
