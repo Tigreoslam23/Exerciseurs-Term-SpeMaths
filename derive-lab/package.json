@@ -1,6 +1,6 @@
 {
   "name": "derive-lab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Jeu de dérivation pour le lycée, avec 24 compétences à débloquer.",
@@ -12,6 +12,11 @@
   "devDependencies": {
     "@types/react": "18.3.12",
     "esbuild": "0.24.0",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "@types/react-dom": "18.3.1"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }

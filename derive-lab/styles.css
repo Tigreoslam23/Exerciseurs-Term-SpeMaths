@@ -189,3 +189,22 @@ body{margin:0;background:#0b0e17}
 @media(max-width:900px){.derive .layout{grid-template-columns:1fr}.derive .sidebar{display:none}.derive .studio{grid-template-columns:minmax(0,1fr) 270px}.derive .main{padding:26px}.derive .top{padding:0 23px}.derive .nav button{padding:8px 14px}}
 @media(max-width:650px){.derive .top{min-height:113px;flex-wrap:wrap;padding:13px 16px;gap:11px}.derive .brandmark{height:34px;width:34px;font-size:27px;border-radius:11px}.derive .brandname{font-size:16px}.derive .header-right{margin-left:auto}.derive .nav{order:3;width:100%;justify-content:center;padding:3px}.derive .nav button{flex:1;padding:7px 8px;font-size:11px}.derive .main{padding:24px 15px 35px}.derive .studio{grid-template-columns:1fr}.derive .right{display:grid;grid-template-columns:1fr}.derive .intro{gap:10px;margin-bottom:19px}.derive h1{font-size:26px}.derive .intro>.softbtn{font-size:0;padding:8px;min-width:34px}.derive .intro>.softbtn span{font-size:18px}.derive .function-area{padding-top:20px}.derive .original{font-size:33px}.derive .keyboard{padding:19px}.derive .keys .key{height:43px}.derive .tipcard{display:none}.derive .pathgrid,.derive .memogrid{grid-template-columns:1fr}.derive .overview{gap:7px}.derive .overview>div{padding:13px 10px}.derive .overview strong{font-size:23px}.derive .overview span{font-size:9px}.derive .pastline{font-size:19px}.derive .steps{padding-bottom:23px}.derive .skill-progress{padding:19px}.derive .xp{font-size:11px;padding:6px 10px}.derive .memocard .math{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.derive *{transition:none!important;animation:none!important}}
+
+
+/* Saisie homogène, sans déclencher le clavier logiciel de l’appareil. */
+.derive{--math-font:"Cambria Math",Cambria,Georgia,serif}
+.derive .math,.derive .answer,.derive .drop,.derive .blank,.derive .factor-times{font-family:var(--math-font);font-style:italic}
+.derive .key .math{font-size:1.14em;font-weight:400}
+.derive .math-completion{scroll-margin-top:18px;min-width:0}
+.derive .input-help{font-size:11px;color:var(--muted);line-height:1.6;margin:0 0 12px}
+.derive .inline-keyboard{margin:18px 0 0;padding:18px;border:1px solid var(--line);border-radius:15px;background:var(--bg);width:100%;max-width:520px}
+.derive .inline-keyboard .keys{gap:8px}
+.derive .inline-keyboard .key{height:46px;font-size:18px}
+.derive .inline-keyboard .keytools .key{height:36px;font-size:11px}
+.derive .inline-keyboard .extra .key{font-size:16px;height:41px}
+.derive .inline-keyboard .toolsub{margin-bottom:14px}
+.derive .answer{font-style:italic;caret-color:var(--purple);cursor:text;user-select:text}
+.derive .install-button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);padding:7px 11px;border-radius:10px;color:var(--green);font-size:12px;background:var(--panel2)}
+.derive .install-notice{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--purple);border-radius:12px;color:var(--text);font-size:12px;line-height:1.7;margin-bottom:24px;background:var(--panel)}
+.derive .install-notice button{font-size:22px;flex-shrink:0;line-height:1.2}
+@media(max-width:650px){.derive .header-right{gap:7px}.derive .install-button{padding:6px 8px;font-size:11px}.derive .inline-keyboard{padding:13px}.derive .inline-keyboard .keys{gap:6px}.derive .inline-keyboard .key{height:43px;font-size:17px}.derive .inline-keyboard .tag{display:none}.derive .working{gap:4px}.derive .answer{max-width:100%}.derive .inline-keyboard .keyboard-note{font-size:9px}}

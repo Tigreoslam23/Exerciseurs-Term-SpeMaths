@@ -1,4 +1,6 @@
-/// <reference types="react" />
+import * as React from "react";
+import {createRoot} from "react-dom/client";
+type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 type StepKind = "move" | "orbit" | "input" | "rule";
 type FactorRole = "k" | "u";
 type FactorDrag = { role: FactorRole; pointerId: number; startX: number; startY: number; moved: boolean };
@@ -7,7 +9,6 @@ type Exercise = { id: string; expression: string; domain: string; final: string;
 type Skill = { id: string; title: string; subtitle: string; level: number; deps: string[] };
 type Result = { solved: number; clean: number; history: boolean[] };
 type Progress = { version: number; xp: number; stats: Record<string, Result> };
-declare const ReactDOM: { createRoot: (container: Element) => { render: (node: React.ReactNode) => void } };
 const SKILLS: Skill[] = [
   {
     "id": "constant",
@@ -349,7 +350,7 @@ function MathText({text}: {text: string}) {
     }
     flush();return result;
   }
-  const display=text.replace(/sqrt/g,"√").replace(/\*/g," · ").replace(/-/g,"−");
+  const display=text.replace(/sqrt/g,"√").replace(/[·*]/g," × ").replace(/-/g,"−");
   return <span className="math">{render(display)}</span>;
 }
 
@@ -420,10 +421,15 @@ function DeriveLab() {
   const [extraKeys,setExtraKeys]=React.useState(false);
   const [storageOk,setStorageOk]=React.useState(true);
   const [light,setLight]=React.useState(false);
+  const [installPrompt,setInstallPrompt]=React.useState<InstallPromptEvent|null>(null);
+  const [installNotice,setInstallNotice]=React.useState("");
+  const [installBusy,setInstallBusy]=React.useState(false);
+  const [installed,setInstalled]=React.useState(()=>window.matchMedia("(display-mode: standalone)").matches||!!(navigator as any).standalone);
   const [resetting,setResetting]=React.useState(false);
   const [earned,setEarned]=React.useState(0);
   const [newUnlocks,setNewUnlocks]=React.useState<string[]>([]);
   const inputRef=React.useRef<HTMLInputElement>(null);
+  const completionRef=React.useRef<HTMLDivElement>(null);
   const accepted=React.useRef(-1);
   const detailRef=React.useRef<HTMLElement>(null);
   const returnFocus=React.useRef<HTMLElement|null>(null);
@@ -449,7 +455,10 @@ function DeriveLab() {
   },[progress]);
 
   React.useEffect(()=>{
-    if(!done&&current?.kind==="input")inputRef.current?.focus();
+    if(!done&&current?.kind==="input"){
+      inputRef.current?.focus({preventScroll:true});
+      completionRef.current?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+    }
   },[index,done,exercise]);
 
   React.useEffect(()=>{
@@ -468,6 +477,31 @@ function DeriveLab() {
     window.addEventListener("keydown",key);
     return()=>{window.removeEventListener("keydown",key);returnFocus.current?.focus();};
   },[detail]);
+
+  React.useEffect(()=>{
+    const before=(e:Event)=>{e.preventDefault();setInstallPrompt(e as InstallPromptEvent);};
+    const complete=()=>{setInstalled(true);setInstallPrompt(null);setInstallNotice("Dérive Lab est installé sur cet appareil.");};
+    window.addEventListener("beforeinstallprompt",before);
+    window.addEventListener("appinstalled",complete);
+    return()=>{window.removeEventListener("beforeinstallprompt",before);window.removeEventListener("appinstalled",complete);};
+  },[]);
+
+  async function installApp(){
+    if(!installPrompt){
+      setInstallNotice(/iPhone|iPad|iPod/.test(navigator.userAgent)
+        ?"Ouvre ce lien dans Safari, puis Partager → Sur l’écran d’accueil."
+        :"Si l’application est ouverte depuis ChatGPT, choisis d’abord Ouvrir dans Chrome. Dans Chrome, utilise le menu ⋮ → Installer l’application ou Ajouter à l’écran d’accueil. Une première connexion est nécessaire.");
+      return;
+    }
+    setInstallBusy(true);
+    try{
+      await installPrompt.prompt();
+      const choice=await installPrompt.userChoice;
+      setInstallNotice(choice.outcome==="accepted"?"Installation demandée. Ton navigateur termine la création de l’application.":"Tu pourras installer l’application plus tard depuis le menu de ton navigateur.");
+      setInstallPrompt(null);
+    }catch{setInstallNotice("Ouvre ce lien directement dans Chrome, puis réessaie depuis son menu Installer l’application.");}
+    finally{setInstallBusy(false);}
+  }
 
   function start(id:string,sandbox=false){
     const next=SKILLS.find(s=>s.id===id)!;
@@ -600,9 +634,11 @@ function DeriveLab() {
     if(done||current?.kind!=="input")return;
     const el=inputRef.current;
     const from=el?.selectionStart??answer.length,to=el?.selectionEnd??from;
+    text=text.slice(0,Math.max(0,180-answer.length+(to-from)));
+    setFeedback(null);
     setAnswer(answer.slice(0,from)+text+answer.slice(to));
     const caret=from+text.length-(inside?1:0);
-    setTimeout(()=>{el?.focus();el?.setSelectionRange(caret,caret);},0);
+    setTimeout(()=>{el?.focus({preventScroll:true});el?.setSelectionRange(caret,caret);},0);
   }
 
   function erase(){
@@ -611,7 +647,20 @@ function DeriveLab() {
     const from=el?.selectionStart??answer.length,to=el?.selectionEnd??from;
     const begin=from===to?Math.max(0,from-1):from;
     setAnswer(answer.slice(0,begin)+answer.slice(to));
-    setTimeout(()=>{el?.focus();el?.setSelectionRange(begin,begin);},0);
+    setTimeout(()=>{el?.focus({preventScroll:true});el?.setSelectionRange(begin,begin);},0);
+  }
+
+  function handleAnswerKey(e:React.KeyboardEvent<HTMLInputElement>){
+    if(e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.key==="Enter"){e.preventDefault();if(answer.trim())attempt(answer);return;}
+    if(e.key==="Backspace"){e.preventDefault();erase();return;}
+    if(e.key==="Delete"){
+      e.preventDefault();const el=inputRef.current;
+      const from=el?.selectionStart??answer.length,to=el?.selectionEnd??from;
+      setAnswer(answer.slice(0,from)+answer.slice(from===to?to+1:to));
+      setTimeout(()=>el?.setSelectionRange(from,from),0);return;
+    }
+    if(/^[0-9a-z()+\-*/^.,×−·]$/i.test(e.key)){e.preventDefault();insert(e.key.toLowerCase());}
   }
 
   function showHint(){setHint(true);setUsedHelp(true);}
@@ -641,6 +690,7 @@ function DeriveLab() {
       </nav>
       <div className="header-right">
         <span className="xp">✧ {progress.xp} XP</span>
+        {!installed&&<button className="install-button" onClick={installApp} disabled={installBusy} data-install-ready={!!installPrompt} aria-label="Installer l’application">↓ <span>{installBusy?"Installation…":"Installer"}</span></button>}
         <button className="iconbutton" onClick={()=>setLight(!light)}
           aria-label={light?"Activer le thème sombre":"Activer le thème clair"}>{light?"☾":"☼"}</button>
       </div>
@@ -677,6 +727,7 @@ function DeriveLab() {
       </aside>
 
       <main className="main">
+        {installNotice&&<div className="install-notice" role="status"><span>{installNotice}</span><button onClick={()=>setInstallNotice("")} aria-label="Fermer le message d’installation">×</button></div>}
         {view==="atelier"&&<>
           {exploring&&<div className="explore-banner">
             <span>Exploration libre · Cet exercice ne compte pas dans la progression.</span>
@@ -762,24 +813,52 @@ function DeriveLab() {
                     {current.choices.map(choice=><button key={choice} className="rule-choice" onClick={()=>attempt(choice)}><MathText text={choice}/></button>)}
                   </div>}
 
-                  {current.kind==="input"&&<>
+                  {current.kind==="input"&&<div className="math-completion" ref={completionRef}>
                     <div className="working">
                       <MathText text={current.prefix}/>
-                      <input className="answer" ref={inputRef} value={answer}
-                        style={{width:Math.min(300,Math.max(82,answer.length*15+28))}}
-                        aria-label="Réponse à compléter" placeholder="…" autoComplete="off" autoCapitalize="off" spellCheck={false} maxLength={180}
-                        onChange={e=>{setAnswer(e.target.value);setFeedback(null);}}
-                        onKeyDown={e=>{if(e.key==="Enter"&&answer.trim())attempt(answer);}}/>
-                      <MathText text={current.suffix.replace(/^\*/,"")}/>
+                      <input className="answer" ref={inputRef} value={answer.replace(/\*/g,"×").replace(/-/g,"−")}
+                        style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
+                        aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder="…"
+                        readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
+                        onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
+                        onKeyDown={handleAnswerKey}/>
+                      <MathText text={current.suffix}/>
                     </div>
+                    <p className="input-help" id="math-input-help">Utilise le clavier maths juste en dessous. Touche la case pour placer le curseur.</p>
                     {answer&&<div className="input-reading">Lecture : <MathText text={current.prefix+answer+current.suffix}/></div>}
-                  </>}
+                    {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.replace(/[·*]/g," × ")}</div>}
+                    {hint&&<div className="hintbox">{current.hint.replace(/[·*]/g," × ")}</div>}
+                    <section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
+                <div className="tooltitle">Clavier mathématique <span className="tag">Sous ta réponse</span></div>
+                <p className="toolsub">Compose ta réponse avec les touches ci-dessous.</p>
+                <div className="keys">
+                  {["7","8","9","+","−","4","5","6","×","÷","1","2","3","(",")","0",".","x","x²","xⁿ"].map(key=>
+                    <button key={key} disabled={!keyboardActive}
+                      className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
+                      onPointerDown={e=>e.preventDefault()}
+                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||key}/></button>
+                  )}
+                </div>
+                <div className="keytools">
+                  <button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
+                  <button className="key" disabled={!keyboardActive} onClick={()=>{setAnswer("");inputRef.current?.focus({preventScroll:true});}}>Vider la case</button>
+                </div>
+                <button className="morekeys" aria-expanded={extraKeys} onClick={()=>setExtraKeys(!extraKeys)}>{extraKeys?"−":"+"} Fonctions & fractions</button>
+                {extraKeys&&<div className="extra">
+                  {["1/x","√","eˣ","ln","sin","cos"].map(key=>
+                    <button className="key" key={key} disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()}
+                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||key}/></button>
+                  )}
+                </div>}
+                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={()=>attempt(answer)}>Valider la réponse <span>↗</span></button>
+                <div className="keyboard-note">Sur ordinateur, le clavier physique fonctionne aussi.</div>
+              </section>
+                  </div>}
 
-                  {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text}</div>}
-                  {hint&&<div className="hintbox">{current.hint}</div>}
+                  {feedback&&current.kind!=="input"&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.replace(/[·*]/g," × ")}</div>}
+                  {hint&&current.kind!=="input"&&<div className="hintbox">{current.hint.replace(/[·*]/g," × ")}</div>}
                   <div className="actions">
                     <button className="textbtn" onClick={showHint}>✧ Un indice</button>
-                    {current.kind==="input"&&<button className="primary" disabled={!answer.trim()} onClick={()=>attempt(answer)}>Valider <span>↗</span></button>}
                     {hint&&<button className="textbtn" onClick={()=>attempt(current.expected,true)}>Montrer cette étape →</button>}
                   </div>
                 </>:<div className="success" role="status">
@@ -799,32 +878,6 @@ function DeriveLab() {
             </section>
 
             <aside className="right" aria-label="Outils et progression">
-              <div className="panel keyboard">
-                <div className="tooltitle">Clavier mathématique <span className="tag">À portée de main</span></div>
-                <p className="toolsub">{keyboardActive?"Écris dans la case active.":"Il s’active lorsqu’une case est à compléter."}</p>
-                <div className="keys">
-                  {["7","8","9","+","−","4","5","6","×","÷","1","2","3","(",")","0",".","x","x²","xⁿ"].map(key=>
-                    <button key={key} disabled={!keyboardActive}
-                      className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
-                      onMouseDown={e=>e.preventDefault()}
-                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}>{key}</button>
-                  )}
-                </div>
-                <div className="keytools">
-                  <button className="key" disabled={!keyboardActive} onMouseDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
-                  <button className="key" disabled={!keyboardActive} onClick={()=>{setAnswer("");inputRef.current?.focus();}}>Vider la case</button>
-                </div>
-                <button className="morekeys" aria-expanded={extraKeys} onClick={()=>setExtraKeys(!extraKeys)}>{extraKeys?"−":"+"} Fonctions & fractions</button>
-                {extraKeys&&<div className="extra">
-                  {["1/x","√","eˣ","ln","sin","cos"].map(key=>
-                    <button className="key" key={key} disabled={!keyboardActive} onMouseDown={e=>e.preventDefault()}
-                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}>{key}</button>
-                  )}
-                </div>}
-                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={()=>attempt(answer)}>Valider la réponse <span>↗</span></button>
-                <div className="keyboard-note">Le clavier de ton appareil fonctionne aussi.</div>
-              </div>
-
               <div className="panel skill-progress">
                 <div className="tooltitle">Cette compétence <span className="tag">{mastered(skill)?"Maîtrisée ✓":"En construction"}</span></div>
                 <div className="progress-big"><strong>{Math.min(3,stat.clean)}</strong><span>/ 3 pour ouvrir la suite</span></div>
@@ -920,4 +973,5 @@ function DeriveLab() {
 
 const rootElement=document.getElementById("root");
 if(!rootElement)throw new Error("Élément de montage introuvable.");
-ReactDOM.createRoot(rootElement).render(<DeriveLab/>);
+createRoot(rootElement).render(<DeriveLab/>);
+

@@ -11,7 +11,7 @@ Le jeu démarre sur `f(x) = 4x²` :
 1. Glisser la boîte arrondie `4` sur `k`, dans le bloc « Forme k × u(x) » : `k = 4` apparaît et le coefficient devient `k` dans la fonction de départ.
 2. Glisser la boîte `x²` sur `u(x)` : `u(x) = x²` apparaît et la fonction de départ devient `f(x) = k × u(x)`. Les deux éléments peuvent être identifiés dans l’ordre choisi par l’élève.
 3. Cliquer sur « Appliquer la règle (ku)′ = ku′ », puis choisir `2x` dans la roue des dérivées.
-4. Saisir `8` au clavier pour obtenir `f′(x) = 8x`.
+4. Saisir `8` avec le clavier maths placé sous la case pour obtenir `f′(x) = 8 × x`.
 
 Les boîtes suivent la souris, le stylet ou le doigt pendant le déplacement. On peut aussi sélectionner une boîte puis sa destination, y compris avec Tab et Entrée/Espace. Un dépôt incorrect conserve l’étape et donne un indice ; Échap annule la sélection ou le déplacement. Cette identification s’applique à tous les ateliers qui commencent par un coefficient constant.
 
@@ -26,7 +26,10 @@ Les exercices sont générés aléatoirement. Les niveaux Première / Terminale 
 - 30 XP pour un exercice sans erreur ni indice ; 10 XP après aide ou erreur.
 - Exploration libre des ateliers verrouillés, sans points ni déblocages.
 - Historique visuel des 20 derniers exercices, avec stries pour les exercices aidés ou corrigés.
-- Clavier numérique et mathématique, clavier physique, indices et mémo.
+- Clavier mathématique sous la réponse, visible seulement lors du calcul final ; clavier système mobile désactivé. Le clavier physique reste utilisable sur ordinateur.
+- Signe × dans les calculs et police mathématique homogène entre formules, cases et touches.
+- Installation sur l’appareil et fonctionnement hors connexion après un premier chargement complet.
+- Indices et mémo.
 - Thèmes clair et sombre.
 - Sauvegarde locale de la progression dans le navigateur ; aucune synchronisation entre appareils.
 
@@ -37,27 +40,30 @@ Les exercices sont générés aléatoirement. Les niveaux Première / Terminale 
 - `index.html` et `bootstrap.js` : lancement direct depuis GitHub Pages.
 - `package.json`, `tsconfig.json`, `build.mjs` : outils facultatifs de vérification et compilation.
 
-La page directe charge React 18.3.1 et Babel 7.26.4 depuis des CDN, avec un second fournisseur en cas d’erreur. **Une connexion Internet est nécessaire.** Le fichier TSX est transformé côté navigateur : aucune installation n’est requise pour jouer depuis GitHub Pages. Ouvrir uniquement `index.html` par double-clic peut bloquer le chargement du TSX ; utiliser l’adresse publiée ou un serveur local.
+L’application publiée utilise `app.js`, qui regroupe React et le jeu compilé. Aucun CDN ni Babel n’est chargé au démarrage. Les fichiers `manifest.webmanifest`, `sw.js` et les icônes permettent l’installation et le stockage local des ressources. Une première ouverture avec Internet est nécessaire pour préparer le mode hors connexion.
+
+Pour installer sur Android : ouvrir le lien dans Chrome, puis toucher **Installer** dans l’application ou utiliser le menu **⋮ → Installer l’application**. Si le lien est ouvert dans la fenêtre intégrée de ChatGPT, commencer par **Ouvrir dans Chrome**. Sur iPhone/iPad : Safari → Partager → Sur l’écran d’accueil.
 
 ## Développement local
 
 Avec Node.js et npm, depuis ce dossier :
 
 ```sh
-npm install
+npm ci
 npm run typecheck
+npm run build
 npm run dev
 ```
 
 Ouvrir ensuite http://localhost:5173.
 
-Compilation facultative :
+Après chaque modification du TypeScript :
 
 ```sh
 npm run build
 ```
 
-Le dossier `dist/` contient alors la version avec JavaScript précompilé. Elle conserve le chargement de React depuis un CDN.
+La compilation met à jour `app.js` et la version du cache dans `sw.js`, puis prépare le dossier `dist/`. Pour GitHub Pages, conserver également ces fichiers générés dans le dépôt à côté de `index.html`. Le service worker agit uniquement dans le dossier `derive-lab/` et ne modifie pas les autres applications du domaine.
 
 ## Vérifications et limites
 
@@ -66,3 +72,6 @@ Les 24 générateurs ont été soumis à 2 160 comparaisons numériques entre le
 Les expressions saisies sont lues par un petit analyseur, sans `eval` ni exécution de code utilisateur. L’équivalence mathématique est estimée en plusieurs points : ce n’est pas un système de calcul formel ni une preuve symbolique.
 
 La mise à jour de l’identification par glisser-déposer a passé la vérification TypeScript et la compilation. Des essais dans Chromium ont vérifié les deux dépôts à la souris et au toucher (émulation Pixel 7), les destinations incorrectes, l’identification dans les deux ordres, le clavier et la sélection par deux appuis. Le parcours initial `4x² → 8x` attribue toujours 30 XP sans erreur ni aide. Les captures ordinateur et téléphone ont été inspectées, sans débordement horizontal sur le téléphone testé. Les dépendances CDN ont été servies localement dans leurs versions exactes pendant ces essais ; le chargement réseau en conditions réelles et les autres navigateurs restent à vérifier.
+
+
+La mise à jour de saisie/installation passe la vérification TypeScript et la compilation de production. Les essais de navigateur réalisés pour cette mise à jour sont décrits dans la réponse de livraison ; un essai sur l’appareil Android réel reste nécessaire pour confirmer le dialogue d’installation de son système.
