@@ -266,3 +266,30 @@ body{margin:0;background:#0b0e17}
 .derive .apply-pair-rule{width:auto;max-width:100%;min-height:39px;padding:9px 14px;font-size:12px;gap:9px}
 @media(max-width:650px){.derive .uv-workshop{padding:12px}.derive .uv-row{gap:10px}.derive .uv-function>.math,.derive .uv-derivative>.math{font-size:21px}.derive .uv-function .factor-slot,.derive .uv-fixed{font-size:20px;min-height:62px}.derive .uv-derivative .answer,.derive .uv-derivative .answer-render{font-size:21px}.derive .uv-original .factor-token{padding:5px 7px}.derive .uv-rule>.math{font-size:20px}}
 .derive .math-completion .working{max-width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:5px}
+
+/* Substitution de u, u′, v et v′ par manipulation de la formule. */
+.derive .assembly-source{width:100%;cursor:grab;touch-action:none;user-select:none;position:relative;font-family:var(--math-font)}
+.derive .assembly-source:active{cursor:grabbing}
+.derive .assembly-source.selected{box-shadow:0 0 0 3px rgba(184,164,255,.3);border-color:var(--purple)}
+.derive .assembly-grip{font-family:system-ui;font-size:18px;color:var(--muted);position:absolute;right:7px;top:50%;transform:translateY(-50%)}
+.derive .assembly-help{font-size:11px;color:var(--muted);line-height:1.7;margin:16px 0 0}
+.derive .assembly-equation{font-size:24px;margin:22px 0 13px;min-width:0;max-width:100%}
+.derive .assembly-prefix{margin-bottom:13px;font-size:28px}
+.derive .assembly-product,.derive .assembly-numerator{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 4px;max-width:100%}
+.derive .assembly-term{display:inline-flex;align-items:center;gap:5px;max-width:100%}
+.derive .assembly-slot{display:inline-flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;min-width:66px;width:clamp(66px,8vw,110px);min-height:61px;padding:7px 5px;border:1.5px dashed var(--purple);border-radius:10px;color:var(--purple);background:rgba(184,164,255,.06);font-size:22px;font-family:var(--math-font);font-weight:400}
+.derive .assembly-slot>.math{max-width:100%;overflow-x:auto;white-space:nowrap}
+.derive .assembly-slot.ready{background:rgba(184,164,255,.12)}
+.derive .assembly-slot.over{box-shadow:0 0 0 4px rgba(163,245,207,.25);border-color:var(--green)}
+.derive .assembly-slot.filled:disabled{opacity:1;color:var(--green);border:1px solid var(--green);background:rgba(163,245,207,.05)}
+.derive .assembly-drop-hint{font:9px Inter,system-ui,sans-serif}
+.derive .assembly-fraction{display:flex;flex-direction:column;max-width:100%}
+.derive .assembly-numerator{padding:0 5px 12px;border-bottom:1.5px solid var(--text)}
+.derive .assembly-denominator{display:flex;align-items:center;justify-content:center;padding-top:12px;gap:4px}
+.derive .assembly-denominator>sup{align-self:flex-start;font-family:var(--math-font);line-height:1;margin-top:-3px}
+.derive .assembly-progress{font-size:11px;color:var(--muted);text-align:center;margin:16px 0}
+.derive .validate-assembly{width:auto;max-width:100%;font-size:12px;padding:10px 15px;gap:10px}
+.derive .specific-rule{display:flex;flex-direction:column;align-items:flex-start;gap:20px;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--bg);margin:16px 0}
+.derive .specific-rule>.math{font-size:30px;max-width:100%;overflow-x:auto;padding:6px 0}
+.derive .specific-rule>.primary{width:auto;padding:10px 16px;font-size:12px;gap:12px}
+@media(max-width:650px){.derive .assembly-equation{font-size:20px}.derive .assembly-slot{width:74px;min-width:60px;min-height:57px;font-size:20px}.derive .assembly-term{gap:4px}.derive .assembly-prefix{font-size:25px}.derive .assembly-grip{font-size:14px;right:4px}.derive .specific-rule{padding:16px}.derive .specific-rule>.math{font-size:26px}}

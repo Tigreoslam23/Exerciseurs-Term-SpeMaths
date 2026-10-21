@@ -1,10 +1,11 @@
 import * as React from "react";
 import {createRoot} from "react-dom/client";
 import {MathText} from "./math-display";
+import {RuleAssembly,substitutedRule,type AssemblyPair} from "./rule-assembly";
 type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
-type StepKind = "move" | "pair" | "input" | "rule";
+type StepKind = "move" | "pair" | "assemble" | "formula" | "input" | "rule";
 type PairRole = "u" | "v";
-type Pair = {operation:"product"|"quotient";u:string;v:string;du:string;dv:string};
+type Pair = AssemblyPair;
 type FactorRole = "k" | PairRole;
 type FactorDrag = { role: FactorRole; pointerId: number; startX: number; startY: number; moved: boolean };
 type Step = { kind: StepKind; prompt: string; expected: string; prefix: string; suffix: string; hint: string; choices: string[]; solved: string };
@@ -345,6 +346,12 @@ function makeTask(id: string, first = false): Exercise {
  const derivative=(ans:string,hint:string,prefix="f'(x) = ",suffix="")=>step("input","Écris la dérivée.",ans,prefix,suffix,hint);
  const input=(expected,prefix="f'(x) = ",suffix="",hint="Effectue le calcul, puis simplifie.")=>step("input","À toi de simplifier.",expected,prefix,suffix,hint);
  const rule=(ans,hint)=>step("rule","Quelle règle faut-il utiliser ?",ans,"","",hint,["u'+v'","u'v+uv'","(u'v-uv')/v^2","u'×g'(u)"],"Règle : "+ans);
+ const exponentialRule=()=>step("formula","Dérive l’exponentielle composée.","exp-formula","","","La dérivée de eᵘ est u′eᵘ. Calcule u′ puis conserve eᵘ.",[],"(e^u)' = u'*e^u");
+ const reducedSqrt=(coefficient:number,root:string)=>{
+   const divisor=coefficient%2===0?2:1,numerator=String(coefficient/divisor),denominator=(divisor===2?"":"2")+"sqrt"+root;
+   const suffix="/("+denominator+")";
+   return {numerator,suffix,final:numerator+suffix,hint:divisor===2?"Réduis le coefficient "+coefficient+"/2 avant de compléter le numérateur.":"Le coefficient "+coefficient+"/2 est irréductible."};
+ };
  const identifyPair=(operation:"product"|"quotient")=>step("pair","Identifie u et v, puis calcule leurs dérivées.","pair","","",operation==="quotient"?"u est le numérateur et v le dénominateur.":"Dans cet atelier, u est le premier facteur et v le second.",[],operation==="quotient"?"(u/v)' = (u'v-uv')/v^2":"(uv)' = u'v+uv'");
  const move=(k,base)=>step("move","Identifie la forme k × u(x).",String(k),"f'(x) = ",`*(${base})'`,"k est le nombre constant ; u(x) est le facteur qui dépend de x. Puis (ku)' = ku'.",[]);
  const coeff=(k,p)=>{const base=xp(p),d=p===1?"1":`${p}*${xp(p-1)}`,final=poly(Array.from({length:p},(_,i)=>i===p-1?k*p:0));return {expression:`${k}*${base}`,domain:"sur ℝ",final,coefficient:String(k),base,steps:[move(k,base),derivative(d,`La dérivée de x^${p} est ${p}x^${p-1}.`,`f'(x) = ${k}*`,""),input(String(k*p),"f'(x) = ",p===1?"":`*${xp(p-1)}`,`Multiplie ${k} par ${p}.`)]};};
@@ -358,22 +365,23 @@ function makeTask(id: string, first = false): Exercise {
  if(id==="affine")t={expression:poly([b,a]),domain:"sur ℝ",final:String(a),steps:[rule("u'+v'","On dérive chaque terme d'une somme."),derivative("0","Le terme constant disparaît.","Dérivée de "+b+" = ",""),input(String(a),"f'(x) = ","","La dérivée de ax est a.")]};
  if(id==="sum"){const expr=poly([c,b,a,1]),final=poly([b,2*a,3]);t={expression:expr,domain:"sur ℝ",final,steps:[rule("u'+v'","La dérivée d'une somme est la somme des dérivées."),derivative("3*x^2","(x³)' = 3x².","(x^3)' = "),derivative("2*x","(x²)' = 2x.","(x^2)' = "),input(final,"f'(x) = ","",`Dérive terme à terme. Le terme ${c} donne 0.`)]};}
  if(id==="inverse")t={expression:`${a}/x`,domain:"pour x ≠ 0",final:`-${a}/x^2`,coefficient:String(a),base:"1/x",steps:[move(a,"1/x"),derivative("-1/x^2","(1/x)' = -1/x².",`f'(x) = ${a}*`,""),input(String(-a),"f'(x) = ","/x^2","Le signe moins vient de la dérivée de 1/x.")]};
- if(id==="sqrt")t={expression:`${a}*sqrt(x)`,domain:"pour x > 0",final:`${a}/(2sqrt(x))`,coefficient:String(a),base:"sqrt(x)",steps:[move(a,"sqrt(x)"),derivative("1/(2sqrt(x))","(√x)' = 1/(2√x).",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","/(2sqrt(x))","Le coefficient reste au numérateur.")]};
+ if(id==="sqrt"){const reduced=reducedSqrt(a,"(x)");t={expression:`${a}*sqrt(x)`,domain:"pour x > 0",final:reduced.final,coefficient:String(a),base:"sqrt(x)",steps:[move(a,"sqrt(x)"),derivative("1/(2sqrt(x))","(√x)' = 1/(2√x).",`f'(x) = ${a}*`,""),input(reduced.numerator,"f'(x) = ",reduced.suffix,reduced.hint)]};}
  if(id==="product"){const u=`x^2+${b}`,v=`${a}*x+${c}`,final=poly([a*b,2*c,3*a]);t={expression:`(${u})*(${v})`,domain:"sur ℝ",final,pair:{operation:"product",u,v,du:"2*x",dv:String(a)},steps:[identifyPair("product"),step("input","Applique la règle du produit.",`2*x*(${v})+(${u})*${a}`,"f'(x) = ","","Remplace u, v, u′ et v′ dans u′v + uv′."),input(final,"f'(x) = ","","Développe les deux produits, puis regroupe les termes de même degré.")]};}
  if(id==="quotient"){const v=`x+${c}`,u=poly([b,a]),k=a*c-b;t={expression:`(${u})/(${v})`,domain:`pour x ≠ -${c}`,final:`${k}/(${v})^2`,pair:{operation:"quotient",u,v,du:String(a),dv:"1"},steps:[identifyPair("quotient"),step("input","Complète le numérateur de la dérivée.",`${a}*(${v})-(${u})*1`,"f'(x) = (",`)/(${v})^2`,"Au numérateur, écris u′v − uv′ dans cet ordre."),input(String(k),"f'(x) = ",`/(${v})^2`,`Simplifie ${a}(${v})−(${u}). Les termes en x s'annulent.`)]};}
  if(id==="exp")t={expression:`${a}*e^x`,domain:"sur ℝ",final:`${a}*e^x`,coefficient:String(a),base:"e^x",steps:[move(a,"e^x"),derivative("e^x","La fonction exponentielle est sa propre dérivée.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","*e^x","Le coefficient est conservé.")]};
  if(id==="ln")t={expression:`${a}*ln(x)`,domain:"pour x > 0",final:`${a}/x`,coefficient:String(a),base:"ln(x)",steps:[move(a,"ln(x)"),derivative("1/x","(ln x)' = 1/x.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","/x","Conserve le coefficient au numérateur.")]};
  const u=`(${a}*x+${b})`,chain=()=>[rule("u'×g'(u)","Dérive la fonction extérieure, puis multiplie par u'."),derivative(String(a),"u est affine : u' = a.","u'(x) = ","")];
- if(id==="exp-affine")t={expression:`e^${u}`,domain:"sur ℝ",final:`${a}*e^${u}`,steps:[...chain(),input(String(a),"f'(x) = ",`*e^${u}`,"(eᵘ)' = u'eᵘ.")]};
+ if(id==="exp-affine")t={expression:`e^${u}`,domain:"sur ℝ",final:`${a}*e^${u}`,steps:[exponentialRule(),derivative(String(a),"u est affine : u′ est le coefficient de x.","u'(x) = "),input(String(a),"f'(x) = ",`*e^${u}`,"(eᵘ)' = u'eᵘ.")]};
  if(id==="ln-affine")t={expression:`ln${u}`,domain:`pour x > -${b}/${a}`,final:`${a}/${u}`,steps:[...chain(),input(String(a),"f'(x) = ",`/${u}`,"(ln u)' = u'/u lorsque u > 0.")]};
  if(id==="chain-power"){const p=r(2,5);t={expression:`${u}^${p}`,domain:"sur ℝ",final:`${p*a}*${u}^${p-1}`,steps:[...chain(),input(String(p*a),"f'(x) = ",`*${u}^${p-1}`,`(u^${p})' = ${p}u'u^${p-1}. Multiplie ${p} par ${a}.`)]};}
  if(id==="chain-inverse")t={expression:`1/${u}`,domain:`pour x ≠ -${b}/${a}`,final:`-${a}/${u}^2`,steps:[...chain(),input(String(-a),"f'(x) = ",`/${u}^2`,"(1/u)' = -u'/u².")]};
- if(id==="chain-sqrt")t={expression:`sqrt${u}`,domain:`pour x > -${b}/${a}`,final:`${a}/(2sqrt${u})`,steps:[...chain(),input(String(a),"f'(x) = ",`/(2sqrt${u})`,"(√u)' = u'/(2√u), lorsque u > 0.")]};
+ if(id==="chain-sqrt"){const reduced=reducedSqrt(a,u);t={expression:`sqrt${u}`,domain:`pour x > -${b}/${a}`,final:reduced.final,steps:[...chain(),input(reduced.numerator,"f'(x) = ",reduced.suffix,"(√u)' = u'/(2√u). "+reduced.hint)]};}
  if(id==="sin")t={expression:`sin${u}`,domain:"sur ℝ",final:`${a}*cos${u}`,steps:[...chain(),derivative(`cos${u}`,"La dérivée de sin est cos.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ",`*cos${u}`,"Multiplie par u'.")]};
  if(id==="cos")t={expression:`cos${u}`,domain:"sur ℝ",final:`-${a}*sin${u}`,steps:[...chain(),derivative(`-sin${u}`,"La dérivée de cos est −sin.",`f'(x) = ${a}*`,""),input(String(-a),"f'(x) = ",`*sin${u}`,"Pense au signe moins.")]};
- if(id==="exp-square"){const q=`(${a}*x^2+${b})`;t={expression:`e^${q}`,domain:"sur ℝ",final:`${2*a}*x*e^${q}`,steps:[rule("u'×g'(u)","L'exponentielle contient une fonction de x."),derivative(`${2*a}*x`,"La dérivée de ax²+b est 2ax.","u'(x) = ",""),input(String(2*a),"f'(x) = ",`*x*e^${q}`,"Multiplie le coefficient par 2.")]};}
+ if(id==="exp-square"){const q=`(${a}*x^2+${b})`;t={expression:`e^${q}`,domain:"sur ℝ",final:`${2*a}*x*e^${q}`,steps:[exponentialRule(),derivative(`${2*a}*x`,"La dérivée de ax²+b est 2ax.","u'(x) = ",""),input(String(2*a),"f'(x) = ",`*x*e^${q}`,"Multiplie le coefficient par 2.")]};}
  if(id==="product-exp"){const u=poly([b,a]),v="e^x",z=poly([a+b,a]);t={expression:`(${u})*${v}`,domain:"sur ℝ",final:`(${z})*e^x`,pair:{operation:"product",u,v,du:String(a),dv:"e^x"},steps:[identifyPair("product"),step("input","Applique la règle du produit.",`${a}*e^x+(${u})*e^x`,"f'(x) = ","","Remplace chaque élément dans u′v + uv′."),input(z,"f'(x) = (",")*e^x",`Factorise par eˣ, puis réduis ${a}+(${u}).`)]};}
  if(id==="synthesis"){const u=`x^${n}`,v="ln(x)",final=`x^${n-1}*(${n}*ln(x)+1)`;t={expression:`${u}*${v}`,domain:"pour x > 0",final,pair:{operation:"product",u,v,du:`${n}*x^${n-1}`,dv:"1/x"},steps:[identifyPair("product"),step("input","Applique la règle du produit.",`${n}*x^${n-1}*ln(x)+x^${n}*(1/x)`,"f'(x) = ","","Remplace u, v et leurs dérivées dans u′v + uv′."),input(final,"f'(x) = ","","Réduis puis factorise par x^(n−1).") ]};}
+ if(t.pair)t.steps[1]=step("assemble","Applique la règle par glisser-déposer.","assemble","","","Place u′ puis v dans le premier terme, u puis v′ dans le second. Pour un quotient, ajoute v au dénominateur, au carré.",[],"f'(x) = "+substitutedRule(t.pair));
  return {...t,id};
 }
 
@@ -812,8 +820,8 @@ function DeriveLab() {
                 {exercise.steps.slice(0,done?exercise.steps.length:index).map((s,i)=>
                   <React.Fragment key={i}>
                     {s.kind==="move"&&<div className="pastline identification-summary"><span className="tick">✓</span><MathText text={"k = "+exercise.coefficient+" ; u(x) = "+exercise.base}/></div>}
-                    {s.kind==="pair"&&pairTable(true)}
-                    <div className="pastline"><span className="tick">✓</span><MathText text={s.solved} compact={i===exercise.steps.length-1}/></div>
+                    {s.kind==="pair"&&current.kind!=="assemble"&&pairTable(true)}
+                    {s.kind!=="pair"&&<div className="pastline"><span className="tick">✓</span><MathText text={s.solved} compact={i===exercise.steps.length-1}/></div>}
                   </React.Fragment>
                 )}
 
@@ -822,6 +830,8 @@ function DeriveLab() {
                   <p className="instruction" id="factor-instruction">
                     {current.kind==="move"&&"Glisse chaque boîte de la fonction sur k ou u(x). Tu peux aussi sélectionner une boîte, puis toucher sa destination."}
                     {current.kind==="pair"&&(exercise.pair!.operation==="quotient"?"Place le numérateur dans u et le dénominateur dans v. Saisis ensuite leurs dérivées dans les cases en face.":"Place le premier facteur dans u et le second dans v. Saisis leurs dérivées dans les cases en face.")}
+                    {current.kind==="assemble"&&"Utilise les quatre boîtes validées pour remplacer les lettres de la formule. Le clavier servira ensuite à développer et simplifier."}
+                    {current.kind==="formula"&&"Calcule u′, puis multiplie par l’exponentielle de u."}
                     {current.kind==="rule"&&"Observe la structure de la fonction avant de commencer les calculs."}
                     {current.kind==="input"&&"Complète uniquement la case avec le clavier, puis valide."}
                   </p>
@@ -831,6 +841,8 @@ function DeriveLab() {
                   {current.kind==="pair"&&<>
                     {pairTable()}
                   </>}
+                  {current.kind==="assemble"&&<RuleAssembly pair={exercise.pair!} onComplete={()=>attempt(current.expected)} onError={()=>{setHadError(true);setFeedback(null);}}/>}
+                  {current.kind==="formula"&&<div className="specific-rule"><MathText text={current.solved}/><button className="primary" onClick={()=>attempt(current.expected)}>Utiliser cette règle <span>→</span></button></div>}
                   {current.kind==="rule"&&<div className="rules">
                     {current.choices.map(choice=><button key={choice} className="rule-choice" onClick={()=>attempt(choice)}><MathText text={choice}/></button>)}
                   </div>}
