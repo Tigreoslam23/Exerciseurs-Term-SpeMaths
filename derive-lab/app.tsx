@@ -1,5 +1,6 @@
 import * as React from "react";
 import {createRoot} from "react-dom/client";
+import {MathText} from "./math-display";
 type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 type StepKind = "move" | "orbit" | "input" | "rule";
 type FactorRole = "k" | "u";
@@ -327,31 +328,6 @@ function equivalent(a: string, b: string): boolean {
       return Math.abs(u-v)<=1e-8*Math.max(1,Math.abs(u),Math.abs(v));
     });
   } catch { return false; }
-}
-function MathText({text}: {text: string}) {
-  function render(s: string): React.ReactNode[] {
-    const result: React.ReactNode[] = [];
-    let buffer="";
-    const flush=()=>{if(buffer){result.push(buffer);buffer="";}};
-    for(let i=0;i<s.length;i++){
-      if(s[i]!=="^"){buffer+=s[i];continue;}
-      flush();let exponent="";
-      if(s[i+1]==="("){
-        let depth=1,j=i+2;
-        for(;j<s.length&&depth;j++){if(s[j]==="(")depth++;if(s[j]===")")depth--;}
-        if(depth!==0){buffer+="^";continue;}
-        exponent=s.slice(i+2,j-1);i=j-1;
-      }else{
-        const match=s.slice(i+1).match(/^[+-]?\d+|^[a-z]/);
-        if(!match){buffer+="^";continue;}
-        exponent=match[0];i+=exponent.length;
-      }
-      result.push(<sup key={"sup-"+i}>{render(exponent)}</sup>);
-    }
-    flush();return result;
-  }
-  const display=text.replace(/sqrt/g,"√").replace(/[·*]/g," × ").replace(/-/g,"−");
-  return <span className="math">{render(display)}</span>;
 }
 
 function makeTask(id: string, first = false): Exercise {
@@ -737,7 +713,7 @@ function DeriveLab() {
             <div>
               <div className="eyebrow">Atelier {String(SKILLS.indexOf(skill)+1).padStart(2,"0")} · {skill.level===1?"Fondamentaux":"Approfondissement"}</div>
               <h1>{skill.title}</h1>
-              <p className="subtitle">{skill.subtitle}. Une étape après l’autre.</p>
+              <p className="subtitle">{skill.subtitle.includes("/")?<MathText text={skill.subtitle}/>:skill.subtitle}. Une étape après l’autre.</p>
             </div>
             <button className="softbtn" onClick={()=>start(skill.id,exploring)} title="Changer d’exemple"><span>↻</span> Nouvel exemple</button>
           </div>
@@ -747,15 +723,27 @@ function DeriveLab() {
               <div className="function-area">
                 <div className="function-meta">
                   <span className="overline">Fonction à transformer</span>
-                  <span className="domain">Dérivable {exercise.domain}</span>
+                  <span className="domain">Dérivable <MathText text={exercise.domain}/></span>
                 </div>
-                <div className="original">
+                <div className={"function-line"+(!done&&current.kind==="move"?" identifying":"")}>
+                  <div className="function-expression">                <div className="original">
                   <MathText text="f(x) = "/>
                   {!done&&current.kind==="move"?<>
                     {factorToken("k")}<span className="factor-times">×</span>{factorToken("u")}
                   </>:<MathText text={exercise.expression}/>}
                 </div>
-                <div className="function-note">{!done&&current.kind==="move"?"Déplace les deux boîtes pour reconnaître k et u(x).":"Construis la dérivée sur les lignes ci-dessous."}</div>
+                <div className="function-note">{!done&&current.kind==="move"?"Déplace les deux boîtes pour reconnaître k et u(x).":"Construis la dérivée sur les lignes ci-dessous."}</div></div>
+                  {!done&&current.kind==="move"&&<div className="factor-identification">
+                    <div className="overline">Reconnaître la forme</div>
+                    <div className="factor-form" ref={factorSlotsRef} aria-label="Forme k fois u(x)">
+                      {factorSlot("k")}<span className="factor-times">×</span>{factorSlot("u")}
+                    </div>
+
+                  </div>}
+                </div>
+                {!done&&current.kind==="move"&&<div className="apply-under">                    <button className="primary apply-factor-rule" disabled={!identified.k||!identified.u} onClick={()=>attempt(current.expected)}>
+                      Appliquer la règle <MathText text="(k*u)' = k*u'"/><span>→</span>
+                    </button></div>}
               </div>
 
               <div className="steps">
@@ -779,21 +767,13 @@ function DeriveLab() {
                     {current.kind==="input"&&"Complète uniquement la case avec le clavier, puis valide."}
                   </p>
 
-                  {current.kind==="move"&&<div className="factor-identification">
-                    <div className="overline">Reconnaître la forme</div>
-                    <div className="factor-form" ref={factorSlotsRef} aria-label="Forme k fois u(x)">
-                      {factorSlot("k")}<span className="factor-times">×</span>{factorSlot("u")}
-                    </div>
-                    <button className="primary apply-factor-rule" disabled={!identified.k||!identified.u} onClick={()=>attempt(current.expected)}>
-                      Appliquer la règle <MathText text="(k*u)' = k*u'"/><span>→</span>
-                    </button>
-                  </div>}
+
 
                   {current.kind==="orbit"&&<>
                     <div className="working"><MathText text={current.prefix}/><span className="blank">?</span><MathText text={current.suffix}/></div>
                     <div className="orbit-wrap">
                       <div className="orbit" aria-label="Roue des dérivées">
-                        <div className="orbit-center"><span>d/dx</span><small>CHOISIR</small></div>
+                        <div className="orbit-center"><span><MathText text="d/dx"/></span><small>CHOISIR</small></div>
                         {current.choices.map((choice,i)=>{
                           const theta=(i*360/current.choices.length-90+angle)*Math.PI/180;
                           return <button key={choice} className={"orbit-choice"+(choice.length>10?" long":"")}
@@ -815,19 +795,22 @@ function DeriveLab() {
 
                   {current.kind==="input"&&<div className="math-completion" ref={completionRef}>
                     <div className="working">
-                      <MathText text={current.prefix}/>
-                      <input className="answer" ref={inputRef} value={answer.replace(/\*/g,"×").replace(/-/g,"−")}
-                        style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
-                        aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder="…"
-                        readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
-                        onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
-                        onKeyDown={handleAnswerKey}/>
-                      <MathText text={current.suffix}/>
+                      <MathText text={current.prefix+"□"+current.suffix} slot={
+                        <span className={"answer-shell"+(/[\/^]/.test(answer)?" typeset":"")}>
+                          <input className="answer" ref={inputRef} value={answer.replace(/\*/g,"×").replace(/-/g,"−")}
+                            style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
+                            aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder="…"
+                            readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
+                            onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
+                            onKeyDown={handleAnswerKey}/>
+                          {/[\/^]/.test(answer)&&<span className="answer-render" aria-hidden="true"><MathText text={answer}/></span>}
+                        </span>
+                      }/>
                     </div>
                     <p className="input-help" id="math-input-help">Utilise le clavier maths juste en dessous. Touche la case pour placer le curseur.</p>
                     {answer&&<div className="input-reading">Lecture : <MathText text={current.prefix+answer+current.suffix}/></div>}
-                    {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.replace(/[·*]/g," × ")}</div>}
-                    {hint&&<div className="hintbox">{current.hint.replace(/[·*]/g," × ")}</div>}
+                    {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
+                    {hint&&<div className="hintbox"><MathText text={current.hint}/></div>}
                     <section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
                 <div className="tooltitle">Clavier mathématique <span className="tag">Sous ta réponse</span></div>
                 <p className="toolsub">Compose ta réponse avec les touches ci-dessous.</p>
@@ -855,8 +838,8 @@ function DeriveLab() {
               </section>
                   </div>}
 
-                  {feedback&&current.kind!=="input"&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.replace(/[·*]/g," × ")}</div>}
-                  {hint&&current.kind!=="input"&&<div className="hintbox">{current.hint.replace(/[·*]/g," × ")}</div>}
+                  {feedback&&current.kind!=="input"&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
+                  {hint&&current.kind!=="input"&&<div className="hintbox"><MathText text={current.hint}/></div>}
                   <div className="actions">
                     <button className="textbtn" onClick={showHint}>✧ Un indice</button>
                     {hint&&<button className="textbtn" onClick={()=>attempt(current.expected,true)}>Montrer cette étape →</button>}
@@ -914,7 +897,7 @@ function DeriveLab() {
               const q=progress.stats[s.id],unlocked=available(s),master=mastered(s);
               return <button className={"pathcard"+(unlocked?"":" locked")} key={s.id} onClick={()=>chooseSkill(s)}>
                 <div className="cardtop"><span>ATELIER {String(SKILLS.indexOf(s)+1).padStart(2,"0")}</span><span>{master?"✓":unlocked?"↗":"◇"}</span></div>
-                <h3>{s.title}</h3><p>{s.subtitle}</p>
+                <h3>{s.title}</h3><p>{s.subtitle.includes("/")?<MathText text={s.subtitle}/>:s.subtitle}</p>
                 <span className="pathstatus">{master?"Maîtrisée":unlocked?Math.min(q?.clean||0,3)+" / 3 réussites sans aide · Jouer →":"Voir les prérequis ou explorer →"}</span>
               </button>;
             })}
@@ -943,7 +926,7 @@ function DeriveLab() {
       <section className="dialog" ref={detailRef} role="dialog" aria-modal="true" aria-labelledby="skill-dialog-title" onClick={e=>e.stopPropagation()}>
         <div className="dialoghead"><span className="overline">Compétence à débloquer</span><button className="iconbutton" onClick={()=>setDetail(null)} aria-label="Fermer">×</button></div>
         <h2 id="skill-dialog-title">{detail.title}</h2>
-        <p>{detail.subtitle}. Pour l’ouvrir dans le parcours, réussis trois exercices sans erreur ni indice dans chacun de ces ateliers :</p>
+        <p>{detail.subtitle.includes("/")?<MathText text={detail.subtitle}/>:detail.subtitle}. Pour l’ouvrir dans le parcours, réussis trois exercices sans erreur ni indice dans chacun de ces ateliers :</p>
         <div className="dependencies">
           {detail.deps.map(id=>{
             const s=SKILLS.find(q=>q.id===id)!,n=progress.stats[id]?.clean||0;

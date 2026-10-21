@@ -208,3 +208,40 @@ body{margin:0;background:#0b0e17}
 .derive .install-notice{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--purple);border-radius:12px;color:var(--text);font-size:12px;line-height:1.7;margin-bottom:24px;background:var(--panel)}
 .derive .install-notice button{font-size:22px;flex-shrink:0;line-height:1.2}
 @media(max-width:650px){.derive .header-right{gap:7px}.derive .install-button{padding:6px 8px;font-size:11px}.derive .inline-keyboard{padding:13px}.derive .inline-keyboard .keys{gap:6px}.derive .inline-keyboard .key{height:43px;font-size:17px}.derive .inline-keyboard .tag{display:none}.derive .working{gap:4px}.derive .answer{max-width:100%}.derive .inline-keyboard .keyboard-note{font-size:9px}}
+
+/* Fractions verticales : fonctions, règles, résultats, touches et saisie. */
+.derive .math-frac{display:inline-flex;flex-direction:column;align-items:stretch;text-align:center;vertical-align:middle;line-height:1.12;margin:0 .12em;font-size:.94em;white-space:nowrap}
+.derive .math-numerator{display:block;border-bottom:1.3px solid currentColor;padding:.03em .18em .13em;min-width:.6em}
+.derive .math-denominator{display:block;padding:.13em .18em .03em}
+.derive .math-group{display:inline-flex;align-items:center;vertical-align:middle;white-space:nowrap}
+.derive .math-group.tall>.math-delimiter{font-size:1.8em;line-height:1;font-weight:400}
+.derive .math-prime{margin-left:.025em}
+.derive .math-frac .math-frac{font-size:.88em}
+.derive .math-frac .answer{font-size:24px}
+.derive .pastline{align-items:center;padding-top:5px;padding-bottom:8px;min-height:36px}
+.derive .orbit-choice .math-frac{font-size:.91em}
+.derive .orbit-choice{min-height:52px}
+.derive .inline-keyboard .extra .key{height:auto;min-height:51px;padding:6px}
+.derive .answer-shell{display:inline-grid;vertical-align:middle;max-width:100%;position:relative}
+.derive .answer-shell>.answer,.derive .answer-shell>.answer-render{grid-area:1/1;min-width:0;max-width:100%}
+.derive .answer-shell.typeset>.answer{height:100%;color:transparent;caret-color:var(--purple);background:var(--bg)}
+.derive .answer-render{pointer-events:none;display:flex;align-items:center;justify-content:center;padding:11px 13px;font-size:25px;line-height:1.6;z-index:1;color:var(--text)}
+.derive .input-reading{line-height:1.8}
+
+/* La fonction et sa forme k × u(x) se lisent sur une même ligne. */
+.derive .function-area{container-type:inline-size}
+.derive .function-line{min-width:0}
+.derive .function-line.identifying{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,1.1fr);align-items:center;gap:18px;margin-top:16px}
+.derive .function-expression{min-width:0}
+.derive .function-line.identifying .original{font-size:clamp(25px,2.4vw,34px);margin:8px 0;padding:9px 0 12px;min-height:76px;white-space:nowrap}
+.derive .function-line.identifying .factor-identification{margin:0;padding:13px 12px;border-radius:13px}
+.derive .function-line.identifying .factor-form{margin:12px 0 2px;font-size:25px;gap:6px}
+.derive .function-line.identifying .factor-slot{min-height:68px;padding:6px;border-radius:10px}
+.derive .function-line.identifying .factor-times{margin-left:4px;margin-right:4px}
+.derive .function-line.identifying .factor-form>.factor-times{margin-top:12px}
+.derive .function-line.identifying .factor-equality{font-size:10px;margin-top:5px;min-height:21px}
+.derive .function-line.identifying .filled .factor-equality{font-size:15px}
+.derive .function-line.identifying .factor-slot-hint{font-size:9px}
+.derive .apply-under{display:flex;justify-content:center;margin-top:17px}
+.derive .apply-under .apply-factor-rule{width:auto;max-width:100%;min-height:37px;padding:8px 14px;font-size:11px;gap:7px;border-radius:9px}
+@container(max-width:470px){.derive .function-line.identifying{grid-template-columns:1fr}.derive .function-line.identifying .factor-identification{width:100%}.derive .function-line.identifying .original{font-size:30px;margin-top:0}.derive .function-line.identifying{gap:10px}.derive .apply-under{margin-top:13px}}

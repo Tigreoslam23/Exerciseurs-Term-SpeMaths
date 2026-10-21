@@ -75,3 +75,9 @@ La mise à jour de l’identification par glisser-déposer a passé la vérifica
 
 
 La mise à jour de saisie/installation passe la vérification TypeScript et la compilation de production. Les essais de navigateur réalisés pour cette mise à jour sont décrits dans la réponse de livraison ; un essai sur l’appareil Android réel reste nécessaire pour confirmer le dialogue d’installation de son système.
+
+## Présentation des fractions et identification
+
+Les fractions sont composées avec un numérateur, une barre horizontale et un dénominateur, y compris dans les fonctions, les boîtes à déplacer, la roue, les règles, le mémo, les résultats et les touches. Les puissances restent dans le dénominateur et les parenthèses sont conservées autour des expressions dérivées. La saisie d’un résultat fractionnaire place la case dans le numérateur ; les expressions saisies utilisent également un aperçu composé dans la case.
+
+Sur les écrans suffisamment larges, le bloc d’identification k × u(x) est directement à droite de la fonction de départ. Le bouton d’application de la règle est plus compact et reste sous cette ligne. Le bloc s’adapte en dessous lorsque la largeur disponible est insuffisante sur un téléphone.
