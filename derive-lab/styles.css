@@ -239,3 +239,30 @@ body{margin:0;background:#0b0e17}
 .derive .math-primed{display:inline-block;white-space:nowrap;padding-right:.035em}
 .derive sup.math-prime{display:inline-block;font-family:var(--math-font);font-style:normal;font-size:.72em;line-height:0;vertical-align:.42em;margin-left:.12em;margin-right:.04em}
 .derive .result>.math{white-space:nowrap}
+
+/* Identification et dérivées d'un produit ou d'un quotient, en vis-à-vis. */
+.derive .uv-original{display:inline-flex;align-items:center;gap:3px;max-width:100%;vertical-align:middle}
+.derive .uv-original .factor-token{min-width:0;font-size:1em;padding:6px 10px;border-radius:10px}
+.derive .uv-original.quotient .math-frac{font-size:.9em}
+.derive .uv-original.quotient .math-numerator,.derive .uv-original.quotient .math-denominator{padding:.12em .15em}
+.derive .uv-workshop{border:1px solid var(--line);border-radius:15px;padding:16px;background:var(--bg);margin:18px 0}
+.derive .uv-rule{display:flex;flex-direction:column;gap:7px;padding-bottom:15px;margin-bottom:15px;border-bottom:1px solid var(--line);min-width:0}
+.derive .uv-rule>span:first-child{font-size:11px;color:var(--purple);font-weight:650}
+.derive .uv-rule>.math{font-size:22px;overflow-x:auto;padding:4px 0;white-space:nowrap}
+.derive .uv-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:15px}
+.derive .uv-function,.derive .uv-derivative{display:flex;flex-direction:column;gap:7px;min-width:0}
+.derive .uv-function>.math,.derive .uv-derivative>.math{font-size:23px;line-height:1.5}
+.derive .uv-function .factor-destination{max-width:none;width:100%;flex:none}
+.derive .uv-function .factor-slot{min-height:65px;font-size:23px;padding:7px;overflow-x:auto}
+.derive .uv-function .factor-equality{display:none}
+.derive .uv-placeholder{font-family:Inter,system-ui,sans-serif;font-style:normal;font-size:11px;font-weight:500}
+.derive .uv-function .factor-slot-hint{font-size:9px}
+.derive .uv-derivative .answer-shell{width:100%;min-height:65px}
+.derive .uv-derivative .answer{width:100%;min-width:0;height:65px;padding:8px;font-size:24px}
+.derive .uv-derivative .answer:disabled{opacity:.35;cursor:default}
+.derive .uv-derivative.active .answer{box-shadow:0 0 0 3px rgba(184,164,255,.16)}
+.derive .uv-derivative .answer-render{overflow-x:auto;font-size:24px;padding:8px}
+.derive .uv-fixed{min-height:65px;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px;border:1px solid var(--green);border-radius:12px;color:var(--green);font-size:23px;overflow-x:auto}
+.derive .apply-pair-rule{width:auto;max-width:100%;min-height:39px;padding:9px 14px;font-size:12px;gap:9px}
+@media(max-width:650px){.derive .uv-workshop{padding:12px}.derive .uv-row{gap:10px}.derive .uv-function>.math,.derive .uv-derivative>.math{font-size:21px}.derive .uv-function .factor-slot,.derive .uv-fixed{font-size:20px;min-height:62px}.derive .uv-derivative .answer,.derive .uv-derivative .answer-render{font-size:21px}.derive .uv-original .factor-token{padding:5px 7px}.derive .uv-rule>.math{font-size:20px}}
+.derive .math-completion .working{max-width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:5px}
