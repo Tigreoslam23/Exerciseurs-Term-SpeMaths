@@ -72,8 +72,26 @@ body{margin:0;background:#0b0e17}
 .derive .step-title .number{font-size:10px;width:23px;height:23px;background:rgba(184,164,255,.13);color:var(--purple);border-radius:8px;display:grid;place-items:center}
 .derive .instruction{font-size:11px;color:var(--muted);margin:0 0 20px;line-height:1.7}
 .derive .working{font-size:clamp(23px,2.6vw,32px);min-height:68px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:13px 0}
-.derive .drop{min-width:68px;height:58px;display:inline-grid;place-items:center;border:1.5px dashed var(--purple);border-radius:11px;background:rgba(184,164,255,.06);font-size:23px;color:var(--purple);font-family:Georgia}
-.derive .drop.ready{border-color:var(--green);background:rgba(126,240,187,.09);color:var(--green)}
+.derive .factor-token{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;min-height:48px;min-width:48px;transition:box-shadow .15s,background .15s}
+.derive .factor-token:active{cursor:grabbing}
+.derive .factor-token.selected{box-shadow:0 0 0 3px rgba(184,164,255,.25)}
+.derive .factor-token.identified:disabled{opacity:1;background:transparent;border-style:dashed;color:var(--muted)}
+.derive .factor-times{font-family:Georgia,serif;color:var(--muted);font-size:.8em;margin:0 7px}
+.derive .factor-identification{border:1px solid var(--line);border-radius:16px;background:var(--bg);padding:19px 16px;margin:13px 0 20px}
+.derive .factor-form{display:flex;align-items:flex-start;justify-content:center;gap:8px;margin:22px 0 16px;font-size:30px}
+.derive .factor-form>.factor-times{align-self:flex-start;margin:14px 0 0}
+.derive .factor-destination{min-width:0;flex:1;max-width:190px;text-align:center}
+.derive .factor-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;min-height:82px;padding:8px;border:1.5px dashed var(--purple);border-radius:14px;background:rgba(184,164,255,.06);color:var(--purple);transition:background .15s,box-shadow .15s}
+.derive .factor-slot.ready{box-shadow:0 0 0 2px rgba(184,164,255,.12)}
+.derive .factor-slot.over{background:rgba(184,164,255,.2);box-shadow:0 0 0 3px var(--purple)}
+.derive .factor-slot.filled:disabled{opacity:1;border-style:solid;border-color:var(--green);color:var(--green);background:rgba(126,240,187,.07)}
+.derive .factor-slot-hint{font:10px/1.5 system-ui,sans-serif;color:var(--muted)}
+.derive .factor-equality{font-size:13px;color:var(--muted);min-height:25px;margin-top:9px;overflow-wrap:anywhere}
+.derive .filled .factor-equality{font-size:18px;color:var(--green)}
+.derive .apply-factor-rule{width:100%;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
+.derive .factor-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-115%);padding:8px 18px;border:1.5px solid var(--purple);border-radius:15px;background:var(--panel2);color:var(--purple);font-size:30px;box-shadow:0 12px 32px #0005;max-width:calc(100vw - 24px)}
+.derive .factor-ghost.reference{border-color:var(--green);color:var(--green)}
+.derive .identification-summary{font-size:17px;flex-wrap:wrap}
 .derive .blank{display:inline-grid;place-items:center;min-width:64px;height:47px;border-bottom:2px solid var(--green);color:var(--green);font-family:system-ui;font-size:22px}
 .derive .answer{border:1px solid var(--purple);border-radius:10px;background:var(--bg);color:var(--text);padding:10px 12px;text-align:center;font-family:Georgia,serif;font-size:25px;max-width:100%;min-width:78px}
 .derive .input-reading{font-size:14px;color:var(--muted);overflow-wrap:anywhere;margin:3px 0 15px}

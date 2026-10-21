@@ -8,9 +8,12 @@ Jeu de calcul de dérivées en **TypeScript / React**, adapté aux ordinateurs, 
 
 Le jeu démarre sur `f(x) = 4x²` :
 
-1. Déplacer le coefficient 4, ou toucher le 4 puis sa destination.
-2. Choisir 2x dans la roue des dérivées.
-3. Saisir 8 au clavier pour obtenir `f′(x) = 8x`.
+1. Glisser la boîte arrondie `4` sur `k`, dans le bloc « Forme k × u(x) » : `k = 4` apparaît et le coefficient devient `k` dans la fonction de départ.
+2. Glisser la boîte `x²` sur `u(x)` : `u(x) = x²` apparaît et la fonction de départ devient `f(x) = k × u(x)`. Les deux éléments peuvent être identifiés dans l’ordre choisi par l’élève.
+3. Cliquer sur « Appliquer la règle (ku)′ = ku′ », puis choisir `2x` dans la roue des dérivées.
+4. Saisir `8` au clavier pour obtenir `f′(x) = 8x`.
+
+Les boîtes suivent la souris, le stylet ou le doigt pendant le déplacement. On peut aussi sélectionner une boîte puis sa destination, y compris avec Tab et Entrée/Espace. Un dépôt incorrect conserve l’étape et donne un indice ; Échap annule la sélection ou le déplacement. Cette identification s’applique à tous les ateliers qui commencent par un coefficient constant.
 
 ## Contenu
 
@@ -62,4 +65,4 @@ Les 24 générateurs ont été soumis à 2 160 comparaisons numériques entre le
 
 Les expressions saisies sont lues par un petit analyseur, sans `eval` ni exécution de code utilisateur. L’équivalence mathématique est estimée en plusieurs points : ce n’est pas un système de calcul formel ni une preuve symbolique.
 
-L’environnement d’exécution local étant indisponible pendant l’enregistrement initial, la compilation TypeScript complète et le test visuel dans un navigateur n’ont pas pu être exécutés. Les commandes ci-dessus permettent de compléter ces contrôles.
+La mise à jour de l’identification par glisser-déposer a passé la vérification TypeScript et la compilation. Des essais dans Chromium ont vérifié les deux dépôts à la souris et au toucher (émulation Pixel 7), les destinations incorrectes, l’identification dans les deux ordres, le clavier et la sélection par deux appuis. Le parcours initial `4x² → 8x` attribue toujours 30 XP sans erreur ni aide. Les captures ordinateur et téléphone ont été inspectées, sans débordement horizontal sur le téléphone testé. Les dépendances CDN ont été servies localement dans leurs versions exactes pendant ces essais ; le chargement réseau en conditions réelles et les autres navigateurs restent à vérifier.

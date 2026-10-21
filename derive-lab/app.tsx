@@ -1,5 +1,7 @@
 /// <reference types="react" />
 type StepKind = "move" | "orbit" | "input" | "rule";
+type FactorRole = "k" | "u";
+type FactorDrag = { role: FactorRole; pointerId: number; startX: number; startY: number; moved: boolean };
 type Step = { kind: StepKind; prompt: string; expected: string; prefix: string; suffix: string; hint: string; choices: string[]; solved: string };
 type Exercise = { id: string; expression: string; domain: string; final: string; coefficient?: string; base?: string; steps: Step[] };
 type Skill = { id: string; title: string; subtitle: string; level: number; deps: string[] };
@@ -364,7 +366,7 @@ function makeTask(id: string, first = false): Exercise {
  const orbit=(ans,hint,prefix="f'(x) = ",suffix="",wrong=["0","1","x","x^2","2*x","-1/x^2"])=>step("orbit","Choisis la bonne dérivée.",ans,prefix,suffix,hint,wrong);
  const input=(expected,prefix="f'(x) = ",suffix="",hint="Effectue le calcul, puis simplifie.")=>step("input","À toi de simplifier.",expected,prefix,suffix,hint);
  const rule=(ans,hint)=>step("rule","Quelle règle faut-il utiliser ?",ans,"","",hint,["u'+v'","u'v+uv'","(u'v-uv')/v^2","u'×g'(u)"],"Règle : "+ans);
- const move=(k,base)=>step("move","Conserve le coefficient constant.",String(k),"f'(x) = ",`*(${base})'`,"Pour (ku)' = ku', le nombre k reste en facteur.",[]);
+ const move=(k,base)=>step("move","Identifie la forme k × u(x).",String(k),"f'(x) = ",`*(${base})'`,"k est le nombre constant ; u(x) est le facteur qui dépend de x. Puis (ku)' = ku'.",[]);
  const coeff=(k,p)=>{const base=xp(p),d=p===1?"1":`${p}*${xp(p-1)}`,final=poly(Array.from({length:p},(_,i)=>i===p-1?k*p:0));return {expression:`${k}*${base}`,domain:"sur ℝ",final,coefficient:String(k),base,steps:[move(k,base),orbit(d,`La dérivée de x^${p} est ${p}x^${p-1}.`,`f'(x) = ${k}*`,"",[xp(p),xp(p-1),`${p}*${xp(p)}`,"0","1"]),input(String(k*p),"f'(x) = ",p===1?"":`*${xp(p-1)}`,`Multiplie ${k} par ${p}.`)]};};
  let t;
  if(id==="constant") t={expression:String(b),domain:"sur ℝ",final:"0",steps:[orbit("0","Une constante ne varie pas : sa dérivée est nulle.","f'(x) = ","",["1",String(b),"x","-1"])]};
@@ -402,7 +404,10 @@ function DeriveLab() {
   const [index,setIndex]=React.useState(0);
   const [done,setDone]=React.useState(false);
   const [answer,setAnswer]=React.useState("");
-  const [picked,setPicked]=React.useState(false);
+  const [picked,setPicked]=React.useState<FactorRole|null>(null);
+  const [identified,setIdentified]=React.useState<Record<FactorRole,boolean>>({k:false,u:false});
+  const [dragPreview,setDragPreview]=React.useState<{role:FactorRole;x:number;y:number}|null>(null);
+  const [overFactor,setOverFactor]=React.useState<FactorRole|null>(null);
   const [hadError,setHadError]=React.useState(false);
   const [usedHelp,setUsedHelp]=React.useState(false);
   const [hint,setHint]=React.useState(false);
@@ -422,6 +427,9 @@ function DeriveLab() {
   const accepted=React.useRef(-1);
   const detailRef=React.useRef<HTMLElement>(null);
   const returnFocus=React.useRef<HTMLElement|null>(null);
+  const factorDrag=React.useRef<FactorDrag|null>(null);
+  const suppressFactorClick=React.useRef(false);
+  const factorSlotsRef=React.useRef<HTMLDivElement>(null);
 
   const skill=SKILLS.find(s=>s.id===exercise.id)!;
   const current=exercise.steps[index];
@@ -463,7 +471,8 @@ function DeriveLab() {
 
   function start(id:string,sandbox=false){
     const next=SKILLS.find(s=>s.id===id)!;
-    setExercise(makeTask(id));setIndex(0);setDone(false);setAnswer("");setPicked(false);
+    setExercise(makeTask(id));setIndex(0);setDone(false);setAnswer("");setPicked(null);
+    setIdentified({k:false,u:false});cancelFactorDrag();
     setHadError(false);setUsedHelp(false);setHint(false);setFeedback(null);
     setAngle(0);setEarned(0);setNewUnlocks([]);
     setExploring(sandbox);setView("atelier");setDetail(null);setLevel(next.level);
@@ -484,7 +493,7 @@ function DeriveLab() {
     accepted.current=index;
     const dirty=hadError||usedHelp||reveal;
     if(reveal)setUsedHelp(true);
-    setAnswer("");setHint(false);setPicked(false);setAngle(0);
+    setAnswer("");setHint(false);setPicked(null);setAngle(0);cancelFactorDrag();
     if(index+1<exercise.steps.length){
       setIndex(index+1);
       setFeedback({good:true,text:reveal?"Étape montrée. À toi pour la suite.":"C’est juste. Continue !"});
@@ -504,6 +513,88 @@ function DeriveLab() {
     setNewUnlocks(SKILLS.filter(s=>!available(s,progress)&&available(s,next)).map(s=>s.title));
     setProgress(next);setEarned(reward);
   }
+
+  function cancelFactorDrag(){
+    factorDrag.current=null;setDragPreview(null);setOverFactor(null);
+  }
+
+  function factorAt(x:number,y:number):FactorRole|null{
+    const target=document.elementFromPoint(x,y)?.closest<HTMLElement>("[data-factor-slot]");
+    return target&&factorSlotsRef.current?.contains(target)?target.dataset.factorSlot as FactorRole:null;
+  }
+
+  function placeFactor(role:FactorRole,destination:FactorRole){
+    if(identified[destination]||done||current.kind!=="move")return;
+    if(role!==destination){
+      setHadError(true);
+      setFeedback({good:false,text:destination==="k"?"k est un nombre constant. Cherche le facteur qui ne dépend pas de x.":"u(x) est la fonction qui dépend de x. Déplace le facteur contenant x."});
+      return;
+    }
+    const next={...identified,[destination]:true};
+    setIdentified(next);setPicked(null);
+    setFeedback({good:true,text:next.k&&next.u?"Les deux éléments sont identifiés. Tu peux maintenant appliquer la règle.":"Bien placé ! Identifie maintenant l’autre élément."});
+  }
+
+  function factorToken(role:FactorRole){
+    const placed=identified[role],value=role==="k"?exercise.coefficient!:exercise.base!;
+    return <button key={role} className={"factor-token "+(role==="k"?"coef":"base")+(picked===role?" selected":"")+(placed?" identified":"")}
+      disabled={placed} aria-label={placed?(role==="k"?"Coefficient identifié : k":"Fonction identifiée : u(x)"):(role==="k"?"Sélectionner le coefficient "+value:"Sélectionner la fonction de référence "+value)}
+      aria-pressed={picked===role} aria-describedby="factor-instruction"
+      onDragStart={e=>e.preventDefault()}
+      onPointerDown={e=>{
+        if(!e.isPrimary||e.button!==0)return;
+        suppressFactorClick.current=false;setPicked(role);setFeedback(null);
+        factorDrag.current={role,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false};
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={e=>{
+        const drag=factorDrag.current;
+        if(!drag||drag.pointerId!==e.pointerId)return;
+        if(Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>6)drag.moved=true;
+        if(drag.moved){setDragPreview({role,x:e.clientX,y:e.clientY});setOverFactor(factorAt(e.clientX,e.clientY));}
+      }}
+      onPointerUp={e=>{
+        const drag=factorDrag.current;
+        if(!drag||drag.pointerId!==e.pointerId)return;
+        const destination=drag.moved?factorAt(e.clientX,e.clientY):null;
+        suppressFactorClick.current=drag.moved;
+        cancelFactorDrag();
+        if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);
+        if(destination)placeFactor(drag.role,destination);
+      }}
+      onPointerCancel={cancelFactorDrag} onLostPointerCapture={cancelFactorDrag}
+      onClick={()=>{
+        if(suppressFactorClick.current){suppressFactorClick.current=false;return;}
+        setPicked(role);setFeedback(null);
+      }}>
+      <MathText text={placed?(role==="k"?"k":"u(x)"):value}/>
+    </button>;
+  }
+
+  function factorSlot(role:FactorRole){
+    const placed=identified[role],label=role==="k"?"k":"u(x)";
+    return <div className={"factor-destination"+(placed?" filled":"")} key={role}>
+      <button data-factor-slot={role} disabled={placed}
+        className={"factor-slot"+(picked&&!placed?" ready":"")+(overFactor===role?" over":"")+(placed?" filled":"")}
+        aria-label={"Déposer "+(role==="k"?"le coefficient sur k":"la fonction sur u(x)")}
+        onClick={()=>{
+          if(picked)placeFactor(picked,role);
+          else setFeedback({good:true,text:"Sélectionne d’abord une boîte dans la fonction, puis dépose-la ici."});
+        }}>
+        <MathText text={placed?(role==="k"?exercise.coefficient!:exercise.base!):label}/>
+        <span className="factor-slot-hint">{placed?"✓ Identifié":"Déposer ici"}</span>
+      </button>
+      <div className="factor-equality" aria-live="polite">{placed?<><MathText text={label+" = "+(role==="k"?exercise.coefficient!:exercise.base!)}/></>:role==="k"?"Nombre constant":"Fonction de x"}</div>
+    </div>;
+  }
+
+  React.useEffect(()=>{
+    const cancel=(e:KeyboardEvent)=>{if(e.key==="Escape"){cancelFactorDrag();setPicked(null);}};
+    window.addEventListener("keydown",cancel);
+    return()=>window.removeEventListener("keydown",cancel);
+  },[]);
+
+  React.useEffect(()=>{cancelFactorDrag();setPicked(null);},[view]);
 
   function insert(text:string,inside=false){
     if(done||current?.kind!=="input")return;
@@ -533,6 +624,10 @@ function DeriveLab() {
   const rate=stat.solved?Math.round(100*stat.clean/stat.solved):0;
 
   return <div className={"derive"+(light?" light":"")}>
+    {dragPreview&&<div className={"factor-ghost "+(dragPreview.role==="k"?"coefficient":"reference")} aria-hidden="true"
+      style={{left:Math.max(58,Math.min(window.innerWidth-58,dragPreview.x)),top:dragPreview.y}}>
+      <MathText text={dragPreview.role==="k"?exercise.coefficient!:exercise.base!}/>
+    </div>}
     <header className="top">
       <button className="brand" onClick={()=>setView("atelier")} aria-label="Revenir à l’atelier">
         <span className="brandmark">∂</span>
@@ -606,18 +701,10 @@ function DeriveLab() {
                 <div className="original">
                   <MathText text="f(x) = "/>
                   {!done&&current.kind==="move"?<>
-                    <button className={"coef"+(picked?" selected":"")} draggable
-                      aria-label={"Sélectionner le coefficient "+exercise.coefficient}
-                      onDragStart={e=>{e.dataTransfer.setData("text/plain",exercise.coefficient!);e.dataTransfer.effectAllowed="move";setPicked(true);}}
-                      onClick={()=>{setPicked(true);setFeedback(null);}}>
-                      <MathText text={exercise.coefficient!}/>
-                    </button>
-                    <button className="base" aria-label="Sélectionner la fonction de référence" onClick={()=>attempt(exercise.base!)}>
-                      <MathText text={exercise.base!}/>
-                    </button>
+                    {factorToken("k")}<span className="factor-times">×</span>{factorToken("u")}
                   </>:<MathText text={exercise.expression}/>}
                 </div>
-                <div className="function-note">{!done&&current.kind==="move"?"Le nombre en violet est manipulable.":"Construis la dérivée sur les lignes ci-dessous."}</div>
+                <div className="function-note">{!done&&current.kind==="move"?"Déplace les deux boîtes pour reconnaître k et u(x).":"Construis la dérivée sur les lignes ci-dessous."}</div>
               </div>
 
               <div className="steps">
@@ -626,28 +713,29 @@ function DeriveLab() {
                   <span className="stepnumber">{done?exercise.steps.length:index+1} / {exercise.steps.length}</span>
                 </div>
                 {exercise.steps.slice(0,done?exercise.steps.length:index).map((s,i)=>
-                  <div className="pastline" key={i}><span className="tick">✓</span><MathText text={s.solved}/></div>
+                  <React.Fragment key={i}>
+                    {s.kind==="move"&&<div className="pastline identification-summary"><span className="tick">✓</span><MathText text={"k = "+exercise.coefficient+" ; u(x) = "+exercise.base}/></div>}
+                    <div className="pastline"><span className="tick">✓</span><MathText text={s.solved}/></div>
+                  </React.Fragment>
                 )}
 
                 {!done?<>
                   <div className="step-title"><span className="number">{index+1}</span>{current.prompt}</div>
-                  <p className="instruction">
-                    {current.kind==="move"&&"Glisse le coefficient dans la case, ou touche le coefficient puis la case."}
+                  <p className="instruction" id="factor-instruction">
+                    {current.kind==="move"&&"Glisse chaque boîte de la fonction sur k ou u(x). Tu peux aussi sélectionner une boîte, puis toucher sa destination."}
                     {current.kind==="orbit"&&"La roue propose plusieurs réponses. Touche celle qui convient."}
                     {current.kind==="rule"&&"Observe la structure de la fonction avant de commencer les calculs."}
                     {current.kind==="input"&&"Complète uniquement la case avec le clavier, puis valide."}
                   </p>
 
-                  {current.kind==="move"&&<div className="working">
-                    <MathText text={current.prefix}/>
-                    <button className={"drop"+(picked?" ready":"")} aria-label="Déposer le coefficient"
-                      onDragOver={e=>{e.preventDefault();e.dataTransfer.dropEffect="move";}}
-                      onDrop={e=>{e.preventDefault();attempt(e.dataTransfer.getData("text/plain"));}}
-                      onClick={()=>{
-                        if(picked)attempt(exercise.coefficient!);
-                        else setFeedback({good:true,text:"Touche d’abord le coefficient violet sur la première ligne."});
-                      }}>{picked?exercise.coefficient:"↓"}</button>
-                    <MathText text={current.suffix}/>
+                  {current.kind==="move"&&<div className="factor-identification">
+                    <div className="overline">Reconnaître la forme</div>
+                    <div className="factor-form" ref={factorSlotsRef} aria-label="Forme k fois u(x)">
+                      {factorSlot("k")}<span className="factor-times">×</span>{factorSlot("u")}
+                    </div>
+                    <button className="primary apply-factor-rule" disabled={!identified.k||!identified.u} onClick={()=>attempt(current.expected)}>
+                      Appliquer la règle <MathText text="(k*u)' = k*u'"/><span>→</span>
+                    </button>
                   </div>}
 
                   {current.kind==="orbit"&&<>
