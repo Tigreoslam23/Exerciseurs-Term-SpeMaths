@@ -92,21 +92,8 @@ body{margin:0;background:#0b0e17}
 .derive .factor-ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-115%);padding:8px 18px;border:1.5px solid var(--purple);border-radius:15px;background:var(--panel2);color:var(--purple);font-size:30px;box-shadow:0 12px 32px #0005;max-width:calc(100vw - 24px)}
 .derive .factor-ghost.reference{border-color:var(--green);color:var(--green)}
 .derive .identification-summary{font-size:17px;flex-wrap:wrap}
-.derive .blank{display:inline-grid;place-items:center;min-width:64px;height:47px;border-bottom:2px solid var(--green);color:var(--green);font-family:system-ui;font-size:22px}
 .derive .answer{border:1px solid var(--purple);border-radius:10px;background:var(--bg);color:var(--text);padding:10px 12px;text-align:center;font-family:Georgia,serif;font-size:25px;max-width:100%;min-width:78px}
 .derive .input-reading{font-size:14px;color:var(--muted);overflow-wrap:anywhere;margin:3px 0 15px}
-.derive .orbit-wrap{display:flex;flex-direction:column;align-items:center;padding:2px 0 9px}
-.derive .orbit{width:min(300px,100%);height:286px;position:relative;isolation:isolate}
-.derive .orbit:before{content:"";position:absolute;inset:38px;border-radius:50%;border:1px dashed var(--line)}
-.derive .orbit:after{content:"";position:absolute;inset:66px;border-radius:50%;border:1px solid var(--line);z-index:-1}
-.derive .orbit-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:74px;height:74px;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px solid var(--line);border-radius:50%;background:var(--panel2)}
-.derive .orbit-center span{font:italic 26px Georgia,serif;color:var(--green)}
-.derive .orbit-center small{font-size:8px;color:var(--muted);letter-spacing:.1em;margin-top:3px}
-.derive .orbit-choice{position:absolute;transform:translate(-50%,-50%);width:86px;min-height:49px;padding:8px 6px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;font-size:18px;transition:left .3s,top .3s,border-color .15s,background .15s;box-shadow:0 6px 20px #00000012}
-.derive .orbit-choice.long{font-size:14px}
-.derive .orbit-choice:hover{border-color:var(--green);background:var(--bg);color:var(--green)}
-.derive .orbit-controls{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:10px}
-.derive .orbit-controls button{border:1px solid var(--line);border-radius:9px;width:31px;height:28px;font-size:17px;background:var(--panel2)}
 .derive .rules{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:22px 0}
 .derive .rule-choice{padding:18px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;font-size:19px;min-height:77px}
 .derive .rule-choice:hover{border-color:var(--green);color:var(--green)}
@@ -193,7 +180,7 @@ body{margin:0;background:#0b0e17}
 
 /* Saisie homogène, sans déclencher le clavier logiciel de l’appareil. */
 .derive{--math-font:"Cambria Math",Cambria,Georgia,serif}
-.derive .math,.derive .answer,.derive .drop,.derive .blank,.derive .factor-times{font-family:var(--math-font);font-style:italic}
+.derive .math,.derive .answer,.derive .drop,.derive .factor-times{font-family:var(--math-font);font-style:italic}
 .derive .key .math{font-size:1.14em;font-weight:400}
 .derive .math-completion{scroll-margin-top:18px;min-width:0}
 .derive .input-help{font-size:11px;color:var(--muted);line-height:1.6;margin:0 0 12px}
@@ -219,8 +206,6 @@ body{margin:0;background:#0b0e17}
 .derive .math-frac .math-frac{font-size:.88em}
 .derive .math-frac .answer{font-size:24px}
 .derive .pastline{align-items:center;padding-top:5px;padding-bottom:8px;min-height:36px}
-.derive .orbit-choice .math-frac{font-size:.91em}
-.derive .orbit-choice{min-height:52px}
 .derive .inline-keyboard .extra .key{height:auto;min-height:51px;padding:6px}
 .derive .answer-shell{display:inline-grid;vertical-align:middle;max-width:100%;position:relative}
 .derive .answer-shell>.answer,.derive .answer-shell>.answer-render{grid-area:1/1;min-width:0;max-width:100%}

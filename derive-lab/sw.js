@@ -1,5 +1,5 @@
 /* Cache limité à Dérive Lab, sans toucher aux autres applications du domaine. */
-const CACHE_NAME = "derive-lab-1ac889aa96c823a3";
+const CACHE_NAME = "derive-lab-a4983c522cc61fc5";
 const CACHE_PREFIX = "derive-lab-";
 const FILES = ["./", "./index.html", "./app.js", "./styles.css", "./bootstrap.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable.png", "./apple-touch-icon.png"];
 self.addEventListener("install", event => {

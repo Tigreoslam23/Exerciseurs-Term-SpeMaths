@@ -10,7 +10,7 @@ Le jeu démarre sur `f(x) = 4x²` :
 
 1. Glisser la boîte arrondie `4` sur `k`, dans le bloc « Forme k × u(x) » : `k = 4` apparaît et le coefficient devient `k` dans la fonction de départ.
 2. Glisser la boîte `x²` sur `u(x)` : `u(x) = x²` apparaît et la fonction de départ devient `f(x) = k × u(x)`. Les deux éléments peuvent être identifiés dans l’ordre choisi par l’élève.
-3. Cliquer sur « Appliquer la règle (ku)′ = ku′ », puis choisir `2x` dans la roue des dérivées.
+3. Cliquer sur « Appliquer la règle (ku)′ = ku′ », puis saisir soi-même `2x` avec le clavier mathématique juste sous la case et valider.
 4. Saisir `8` avec le clavier maths placé sous la case pour obtenir `f′(x) = 8 × x`.
 
 Les boîtes suivent la souris, le stylet ou le doigt pendant le déplacement. On peut aussi sélectionner une boîte puis sa destination, y compris avec Tab et Entrée/Espace. Un dépôt incorrect conserve l’étape et donne un indice ; Échap annule la sélection ou le déplacement. Cette identification s’applique à tous les ateliers qui commencent par un coefficient constant.
@@ -26,7 +26,7 @@ Les exercices sont générés aléatoirement. Les niveaux Première / Terminale 
 - 30 XP pour un exercice sans erreur ni indice ; 10 XP après aide ou erreur.
 - Exploration libre des ateliers verrouillés, sans points ni déblocages.
 - Historique visuel des 20 derniers exercices, avec stries pour les exercices aidés ou corrigés.
-- Clavier mathématique sous la réponse, visible seulement lors du calcul final ; clavier système mobile désactivé. Le clavier physique reste utilisable sur ordinateur.
+- Clavier mathématique sous la réponse, visible à chaque dérivée à saisir et lors du calcul final ; clavier système mobile désactivé. Le clavier physique reste utilisable sur ordinateur.
 - Signe × dans les calculs et police mathématique homogène entre formules, cases et touches.
 - Installation sur l’appareil et fonctionnement hors connexion après un premier chargement complet.
 - Indices et mémo.
@@ -78,6 +78,10 @@ La mise à jour de saisie/installation passe la vérification TypeScript et la c
 
 ## Présentation des fractions et identification
 
-Les fractions sont composées avec un numérateur, une barre horizontale et un dénominateur, y compris dans les fonctions, les boîtes à déplacer, la roue, les règles, le mémo, les résultats et les touches. Les puissances restent dans le dénominateur et les parenthèses sont conservées autour des expressions dérivées. La saisie d’un résultat fractionnaire place la case dans le numérateur ; les expressions saisies utilisent également un aperçu composé dans la case.
+Les fractions sont composées avec un numérateur, une barre horizontale et un dénominateur, y compris dans les fonctions, les boîtes à déplacer, les cases de saisie, les règles, le mémo, les résultats et les touches. Les puissances restent dans le dénominateur et les parenthèses sont conservées autour des expressions dérivées. La saisie d’un résultat fractionnaire place la case dans le numérateur ; les expressions saisies utilisent également un aperçu composé dans la case.
 
 Sur les écrans suffisamment larges, le bloc d’identification k × u(x) est directement à droite de la fonction de départ. Le bouton d’application de la règle est plus compact et reste sous cette ligne. Le bloc s’adapte en dessous lorsque la largeur disponible est insuffisante sur un téléphone.
+
+## Saisie des dérivées
+
+Chaque dérivée intermédiaire se complète librement avec le clavier mathématique sous la ligne, sans carrousel ni point d’interrogation. La validation accepte les écritures mathématiquement équivalentes (par exemple `2x`, `2*x` ou `x+x`). Une erreur conserve la saisie et l’étape pour permettre la correction ; une réponse correcte ouvre une case vide sur la ligne de simplification suivante. Le choix de la règle et l’identification de k et u(x) sont conservés.

@@ -2,7 +2,7 @@ import * as React from "react";
 import {createRoot} from "react-dom/client";
 import {MathText} from "./math-display";
 type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
-type StepKind = "move" | "orbit" | "input" | "rule";
+type StepKind = "move" | "input" | "rule";
 type FactorRole = "k" | "u";
 type FactorDrag = { role: FactorRole; pointerId: number; startX: number; startY: number; moved: boolean };
 type Step = { kind: StepKind; prompt: string; expected: string; prefix: string; suffix: string; hint: string; choices: string[]; solved: string };
@@ -340,37 +340,37 @@ function makeTask(id: string, first = false): Exercise {
  return list;
 };
  const step=(kind: StepKind,prompt: string,expected: string,prefix: string,suffix: string,hint: string,wrong: string[]=[],solved?: string): Step=>({kind,prompt,expected,prefix,suffix,hint,choices:choices(expected,wrong||[]),solved:solved||prefix+expected+suffix});
- const orbit=(ans,hint,prefix="f'(x) = ",suffix="",wrong=["0","1","x","x^2","2*x","-1/x^2"])=>step("orbit","Choisis la bonne dérivée.",ans,prefix,suffix,hint,wrong);
+ const derivative=(ans:string,hint:string,prefix="f'(x) = ",suffix="")=>step("input","Écris la dérivée.",ans,prefix,suffix,hint);
  const input=(expected,prefix="f'(x) = ",suffix="",hint="Effectue le calcul, puis simplifie.")=>step("input","À toi de simplifier.",expected,prefix,suffix,hint);
  const rule=(ans,hint)=>step("rule","Quelle règle faut-il utiliser ?",ans,"","",hint,["u'+v'","u'v+uv'","(u'v-uv')/v^2","u'×g'(u)"],"Règle : "+ans);
  const move=(k,base)=>step("move","Identifie la forme k × u(x).",String(k),"f'(x) = ",`*(${base})'`,"k est le nombre constant ; u(x) est le facteur qui dépend de x. Puis (ku)' = ku'.",[]);
- const coeff=(k,p)=>{const base=xp(p),d=p===1?"1":`${p}*${xp(p-1)}`,final=poly(Array.from({length:p},(_,i)=>i===p-1?k*p:0));return {expression:`${k}*${base}`,domain:"sur ℝ",final,coefficient:String(k),base,steps:[move(k,base),orbit(d,`La dérivée de x^${p} est ${p}x^${p-1}.`,`f'(x) = ${k}*`,"",[xp(p),xp(p-1),`${p}*${xp(p)}`,"0","1"]),input(String(k*p),"f'(x) = ",p===1?"":`*${xp(p-1)}`,`Multiplie ${k} par ${p}.`)]};};
+ const coeff=(k,p)=>{const base=xp(p),d=p===1?"1":`${p}*${xp(p-1)}`,final=poly(Array.from({length:p},(_,i)=>i===p-1?k*p:0));return {expression:`${k}*${base}`,domain:"sur ℝ",final,coefficient:String(k),base,steps:[move(k,base),derivative(d,`La dérivée de x^${p} est ${p}x^${p-1}.`,`f'(x) = ${k}*`,""),input(String(k*p),"f'(x) = ",p===1?"":`*${xp(p-1)}`,`Multiplie ${k} par ${p}.`)]};};
  let t;
- if(id==="constant") t={expression:String(b),domain:"sur ℝ",final:"0",steps:[orbit("0","Une constante ne varie pas : sa dérivée est nulle.","f'(x) = ","",["1",String(b),"x","-1"])]};
- if(id==="linear") t={expression:"x",domain:"sur ℝ",final:"1",steps:[orbit("1","La fonction identité a pour dérivée 1.","f'(x) = ","",["0","x","2*x","x^2"])]};
- if(id==="square") {const p=r(2,3);t={expression:xp(p),domain:"sur ℝ",final:`${p}*${xp(p-1)}`,steps:[orbit(`${p}*${xp(p-1)}`,"Fais descendre l'exposant, puis diminue-le de 1.","f'(x) = ","",[xp(p),xp(p-1),`${p}*${xp(p)}`,"0","1"])]};}
+ if(id==="constant") t={expression:String(b),domain:"sur ℝ",final:"0",steps:[derivative("0","Une constante ne varie pas : sa dérivée est nulle.","f'(x) = ","")]};
+ if(id==="linear") t={expression:"x",domain:"sur ℝ",final:"1",steps:[derivative("1","La fonction identité a pour dérivée 1.","f'(x) = ","")]};
+ if(id==="square") {const p=r(2,3);t={expression:xp(p),domain:"sur ℝ",final:`${p}*${xp(p-1)}`,steps:[derivative(`${p}*${xp(p-1)}`,"Fais descendre l'exposant, puis diminue-le de 1.","f'(x) = ","")]};}
  if(id==="coeff")t=coeff(a,2);
  if(id==="negative")t=coeff(-a,r(2,3));
  if(id==="power")t=coeff(a,n);
- if(id==="affine")t={expression:poly([b,a]),domain:"sur ℝ",final:String(a),steps:[rule("u'+v'","On dérive chaque terme d'une somme."),orbit("0","Le terme constant disparaît.","Dérivée de "+b+" = ","",["1",String(b),"x"]),input(String(a),"f'(x) = ","","La dérivée de ax est a.")]};
- if(id==="sum"){const expr=poly([c,b,a,1]),final=poly([b,2*a,3]);t={expression:expr,domain:"sur ℝ",final,steps:[rule("u'+v'","La dérivée d'une somme est la somme des dérivées."),orbit("3*x^2","(x³)' = 3x².","(x^3)' = "),orbit("2*x","(x²)' = 2x.","(x^2)' = "),input(final,"f'(x) = ","",`Dérive terme à terme. Le terme ${c} donne 0.`)]};}
- if(id==="inverse")t={expression:`${a}/x`,domain:"pour x ≠ 0",final:`-${a}/x^2`,coefficient:String(a),base:"1/x",steps:[move(a,"1/x"),orbit("-1/x^2","(1/x)' = -1/x².",`f'(x) = ${a}*`,"",["1/x^2","-1/x","1","0","x"]),input(String(-a),"f'(x) = ","/x^2","Le signe moins vient de la dérivée de 1/x.")]};
- if(id==="sqrt")t={expression:`${a}*sqrt(x)`,domain:"pour x > 0",final:`${a}/(2sqrt(x))`,coefficient:String(a),base:"sqrt(x)",steps:[move(a,"sqrt(x)"),orbit("1/(2sqrt(x))","(√x)' = 1/(2√x).",`f'(x) = ${a}*`,"",["sqrt(x)","1/sqrt(x)","2sqrt(x)","1/(2x)","0"]),input(String(a),"f'(x) = ","/(2sqrt(x))","Le coefficient reste au numérateur.")]};
- if(id==="product"){const u=`(x^2+${b})`,v=`(${a}*x+${c})`,final=poly([a*b,2*c,3*a]);t={expression:`${u}*${v}`,domain:"sur ℝ",final,steps:[rule("u'v+uv'","Deux facteurs dépendent de x : utilise la règle du produit."),orbit("2*x","u = x² + une constante, donc u' = 2x.","u'(x) = "),orbit(String(a),"v est affine : v' est le coefficient de x.","v'(x) = ","",["0","1","x",String(a+1)]),input(final,"f'(x) = ","",`Développe 2x*${v}+${u}*${a}, puis réduis.`)]};}
- if(id==="quotient"){const den=`(x+${c})`,num=poly([b,a]),k=a*c-b;t={expression:`(${num})/${den}`,domain:`pour x ≠ -${c}`,final:`${k}/${den}^2`,steps:[rule("(u'v-uv')/v^2","Pour u/v : (u'v − uv') / v²."),orbit(String(a),"u est affine.","u'(x) = ","",["0","1","x",String(b)]),orbit("1","La dérivée de x+c est 1.","v'(x) = ","",["0","x",String(c),"-1"]),input(String(k),"f'(x) = ",`/${den}^2`,`Au numérateur : ${a}(x+${c})−(${num}). Les termes en x s'annulent.`)]};}
- if(id==="exp")t={expression:`${a}*e^x`,domain:"sur ℝ",final:`${a}*e^x`,coefficient:String(a),base:"e^x",steps:[move(a,"e^x"),orbit("e^x","La fonction exponentielle est sa propre dérivée.",`f'(x) = ${a}*`,"",["x*e^x","e^(x-1)","1/x","1","0"]),input(String(a),"f'(x) = ","*e^x","Le coefficient est conservé.")]};
- if(id==="ln")t={expression:`${a}*ln(x)`,domain:"pour x > 0",final:`${a}/x`,coefficient:String(a),base:"ln(x)",steps:[move(a,"ln(x)"),orbit("1/x","(ln x)' = 1/x.",`f'(x) = ${a}*`,"",["ln(x)","x","-1/x^2","1","0"]),input(String(a),"f'(x) = ","/x","Conserve le coefficient au numérateur.")]};
- const u=`(${a}*x+${b})`,chain=()=>[rule("u'×g'(u)","Dérive la fonction extérieure, puis multiplie par u'."),orbit(String(a),"u est affine : u' = a.","u'(x) = ","",["0","1","x",String(b),String(a+1)])];
+ if(id==="affine")t={expression:poly([b,a]),domain:"sur ℝ",final:String(a),steps:[rule("u'+v'","On dérive chaque terme d'une somme."),derivative("0","Le terme constant disparaît.","Dérivée de "+b+" = ",""),input(String(a),"f'(x) = ","","La dérivée de ax est a.")]};
+ if(id==="sum"){const expr=poly([c,b,a,1]),final=poly([b,2*a,3]);t={expression:expr,domain:"sur ℝ",final,steps:[rule("u'+v'","La dérivée d'une somme est la somme des dérivées."),derivative("3*x^2","(x³)' = 3x².","(x^3)' = "),derivative("2*x","(x²)' = 2x.","(x^2)' = "),input(final,"f'(x) = ","",`Dérive terme à terme. Le terme ${c} donne 0.`)]};}
+ if(id==="inverse")t={expression:`${a}/x`,domain:"pour x ≠ 0",final:`-${a}/x^2`,coefficient:String(a),base:"1/x",steps:[move(a,"1/x"),derivative("-1/x^2","(1/x)' = -1/x².",`f'(x) = ${a}*`,""),input(String(-a),"f'(x) = ","/x^2","Le signe moins vient de la dérivée de 1/x.")]};
+ if(id==="sqrt")t={expression:`${a}*sqrt(x)`,domain:"pour x > 0",final:`${a}/(2sqrt(x))`,coefficient:String(a),base:"sqrt(x)",steps:[move(a,"sqrt(x)"),derivative("1/(2sqrt(x))","(√x)' = 1/(2√x).",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","/(2sqrt(x))","Le coefficient reste au numérateur.")]};
+ if(id==="product"){const u=`(x^2+${b})`,v=`(${a}*x+${c})`,final=poly([a*b,2*c,3*a]);t={expression:`${u}*${v}`,domain:"sur ℝ",final,steps:[rule("u'v+uv'","Deux facteurs dépendent de x : utilise la règle du produit."),derivative("2*x","u = x² + une constante, donc u' = 2x.","u'(x) = "),derivative(String(a),"v est affine : v' est le coefficient de x.","v'(x) = ",""),input(final,"f'(x) = ","",`Développe 2x*${v}+${u}*${a}, puis réduis.`)]};}
+ if(id==="quotient"){const den=`(x+${c})`,num=poly([b,a]),k=a*c-b;t={expression:`(${num})/${den}`,domain:`pour x ≠ -${c}`,final:`${k}/${den}^2`,steps:[rule("(u'v-uv')/v^2","Pour u/v : (u'v − uv') / v²."),derivative(String(a),"u est affine.","u'(x) = ",""),derivative("1","La dérivée de x+c est 1.","v'(x) = ",""),input(String(k),"f'(x) = ",`/${den}^2`,`Au numérateur : ${a}(x+${c})−(${num}). Les termes en x s'annulent.`)]};}
+ if(id==="exp")t={expression:`${a}*e^x`,domain:"sur ℝ",final:`${a}*e^x`,coefficient:String(a),base:"e^x",steps:[move(a,"e^x"),derivative("e^x","La fonction exponentielle est sa propre dérivée.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","*e^x","Le coefficient est conservé.")]};
+ if(id==="ln")t={expression:`${a}*ln(x)`,domain:"pour x > 0",final:`${a}/x`,coefficient:String(a),base:"ln(x)",steps:[move(a,"ln(x)"),derivative("1/x","(ln x)' = 1/x.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","/x","Conserve le coefficient au numérateur.")]};
+ const u=`(${a}*x+${b})`,chain=()=>[rule("u'×g'(u)","Dérive la fonction extérieure, puis multiplie par u'."),derivative(String(a),"u est affine : u' = a.","u'(x) = ","")];
  if(id==="exp-affine")t={expression:`e^${u}`,domain:"sur ℝ",final:`${a}*e^${u}`,steps:[...chain(),input(String(a),"f'(x) = ",`*e^${u}`,"(eᵘ)' = u'eᵘ.")]};
  if(id==="ln-affine")t={expression:`ln${u}`,domain:`pour x > -${b}/${a}`,final:`${a}/${u}`,steps:[...chain(),input(String(a),"f'(x) = ",`/${u}`,"(ln u)' = u'/u lorsque u > 0.")]};
  if(id==="chain-power"){const p=r(2,5);t={expression:`${u}^${p}`,domain:"sur ℝ",final:`${p*a}*${u}^${p-1}`,steps:[...chain(),input(String(p*a),"f'(x) = ",`*${u}^${p-1}`,`(u^${p})' = ${p}u'u^${p-1}. Multiplie ${p} par ${a}.`)]};}
  if(id==="chain-inverse")t={expression:`1/${u}`,domain:`pour x ≠ -${b}/${a}`,final:`-${a}/${u}^2`,steps:[...chain(),input(String(-a),"f'(x) = ",`/${u}^2`,"(1/u)' = -u'/u².")]};
  if(id==="chain-sqrt")t={expression:`sqrt${u}`,domain:`pour x > -${b}/${a}`,final:`${a}/(2sqrt${u})`,steps:[...chain(),input(String(a),"f'(x) = ",`/(2sqrt${u})`,"(√u)' = u'/(2√u), lorsque u > 0.")]};
- if(id==="sin")t={expression:`sin${u}`,domain:"sur ℝ",final:`${a}*cos${u}`,steps:[...chain(),orbit(`cos${u}`,"La dérivée de sin est cos.",`f'(x) = ${a}*`,"",[`sin${u}`,`-cos${u}`,`-sin${u}`,"1","0"]),input(String(a),"f'(x) = ",`*cos${u}`,"Multiplie par u'.")]};
- if(id==="cos")t={expression:`cos${u}`,domain:"sur ℝ",final:`-${a}*sin${u}`,steps:[...chain(),orbit(`-sin${u}`,"La dérivée de cos est −sin.",`f'(x) = ${a}*`,"",[`sin${u}`,`cos${u}`,`-cos${u}`,"1","0"]),input(String(-a),"f'(x) = ",`*sin${u}`,"Pense au signe moins.")]};
- if(id==="exp-square"){const q=`(${a}*x^2+${b})`;t={expression:`e^${q}`,domain:"sur ℝ",final:`${2*a}*x*e^${q}`,steps:[rule("u'×g'(u)","L'exponentielle contient une fonction de x."),orbit(`${2*a}*x`,"La dérivée de ax²+b est 2ax.","u'(x) = ","",["2*x",`${a}*x`,String(a),q,"0"]),input(String(2*a),"f'(x) = ",`*x*e^${q}`,"Multiplie le coefficient par 2.")]};}
- if(id==="product-exp"){const p=poly([b,a]),z=poly([a+b,a]);t={expression:`(${p})*e^x`,domain:"sur ℝ",final:`(${z})*e^x`,steps:[rule("u'v+uv'","Applique la règle du produit."),orbit("e^x","(eˣ)' = eˣ.","v'(x) = ","",["1","x*e^x","1/x","0","e^(x-1)"]),input(z,"f'(x) = (",")*e^x",`Après factorisation par eˣ, il reste ${a}+(${p}).`)]};}
- if(id==="synthesis"){t={expression:`x^${n}*ln(x)`,domain:"pour x > 0",final:`x^${n-1}*(${n}*ln(x)+1)`,steps:[rule("u'v+uv'","C'est un produit de deux fonctions de x."),orbit(`${n}*x^${n-1}`,"Applique la règle des puissances.","u'(x) = ","",[`x^${n-1}`,`${n}*x^${n}`,String(n),"0","1"]),orbit("1/x","(ln x)' = 1/x.","v'(x) = ","",["ln(x)","x","-1/x^2","1","0"]),input(t?.final||`x^${n-1}*(${n}*ln(x)+1)`,"f'(x) = ","","Utilise u'v+uv', puis factorise par x^(n−1).")]};}
+ if(id==="sin")t={expression:`sin${u}`,domain:"sur ℝ",final:`${a}*cos${u}`,steps:[...chain(),derivative(`cos${u}`,"La dérivée de sin est cos.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ",`*cos${u}`,"Multiplie par u'.")]};
+ if(id==="cos")t={expression:`cos${u}`,domain:"sur ℝ",final:`-${a}*sin${u}`,steps:[...chain(),derivative(`-sin${u}`,"La dérivée de cos est −sin.",`f'(x) = ${a}*`,""),input(String(-a),"f'(x) = ",`*sin${u}`,"Pense au signe moins.")]};
+ if(id==="exp-square"){const q=`(${a}*x^2+${b})`;t={expression:`e^${q}`,domain:"sur ℝ",final:`${2*a}*x*e^${q}`,steps:[rule("u'×g'(u)","L'exponentielle contient une fonction de x."),derivative(`${2*a}*x`,"La dérivée de ax²+b est 2ax.","u'(x) = ",""),input(String(2*a),"f'(x) = ",`*x*e^${q}`,"Multiplie le coefficient par 2.")]};}
+ if(id==="product-exp"){const p=poly([b,a]),z=poly([a+b,a]);t={expression:`(${p})*e^x`,domain:"sur ℝ",final:`(${z})*e^x`,steps:[rule("u'v+uv'","Applique la règle du produit."),derivative("e^x","(eˣ)' = eˣ.","v'(x) = ",""),input(z,"f'(x) = (",")*e^x",`Après factorisation par eˣ, il reste ${a}+(${p}).`)]};}
+ if(id==="synthesis"){t={expression:`x^${n}*ln(x)`,domain:"pour x > 0",final:`x^${n-1}*(${n}*ln(x)+1)`,steps:[rule("u'v+uv'","C'est un produit de deux fonctions de x."),derivative(`${n}*x^${n-1}`,"Applique la règle des puissances.","u'(x) = ",""),derivative("1/x","(ln x)' = 1/x.","v'(x) = ",""),input(t?.final||`x^${n-1}*(${n}*ln(x)+1)`,"f'(x) = ","","Utilise u'v+uv', puis factorise par x^(n−1).")]};}
  return {...t,id};
 }
 
@@ -393,7 +393,6 @@ function DeriveLab() {
   const [level,setLevel]=React.useState(1);
   const [detail,setDetail]=React.useState<Skill|null>(null);
   const [exploring,setExploring]=React.useState(false);
-  const [angle,setAngle]=React.useState(0);
   const [extraKeys,setExtraKeys]=React.useState(false);
   const [storageOk,setStorageOk]=React.useState(true);
   const [light,setLight]=React.useState(false);
@@ -484,7 +483,7 @@ function DeriveLab() {
     setExercise(makeTask(id));setIndex(0);setDone(false);setAnswer("");setPicked(null);
     setIdentified({k:false,u:false});cancelFactorDrag();
     setHadError(false);setUsedHelp(false);setHint(false);setFeedback(null);
-    setAngle(0);setEarned(0);setNewUnlocks([]);
+    setEarned(0);setNewUnlocks([]);
     setExploring(sandbox);setView("atelier");setDetail(null);setLevel(next.level);
     accepted.current=-1;
   }
@@ -503,7 +502,7 @@ function DeriveLab() {
     accepted.current=index;
     const dirty=hadError||usedHelp||reveal;
     if(reveal)setUsedHelp(true);
-    setAnswer("");setHint(false);setPicked(null);setAngle(0);cancelFactorDrag();
+    setAnswer("");setHint(false);setPicked(null);cancelFactorDrag();
     if(index+1<exercise.steps.length){
       setIndex(index+1);
       setFeedback({good:true,text:reveal?"Étape montrée. À toi pour la suite.":"C’est juste. Continue !"});
@@ -762,32 +761,11 @@ function DeriveLab() {
                   <div className="step-title"><span className="number">{index+1}</span>{current.prompt}</div>
                   <p className="instruction" id="factor-instruction">
                     {current.kind==="move"&&"Glisse chaque boîte de la fonction sur k ou u(x). Tu peux aussi sélectionner une boîte, puis toucher sa destination."}
-                    {current.kind==="orbit"&&"La roue propose plusieurs réponses. Touche celle qui convient."}
                     {current.kind==="rule"&&"Observe la structure de la fonction avant de commencer les calculs."}
                     {current.kind==="input"&&"Complète uniquement la case avec le clavier, puis valide."}
                   </p>
 
 
-
-                  {current.kind==="orbit"&&<>
-                    <div className="working"><MathText text={current.prefix}/><span className="blank">?</span><MathText text={current.suffix}/></div>
-                    <div className="orbit-wrap">
-                      <div className="orbit" aria-label="Roue des dérivées">
-                        <div className="orbit-center"><span><MathText text="d/dx"/></span><small>CHOISIR</small></div>
-                        {current.choices.map((choice,i)=>{
-                          const theta=(i*360/current.choices.length-90+angle)*Math.PI/180;
-                          return <button key={choice} className={"orbit-choice"+(choice.length>10?" long":"")}
-                            style={{left:(50+36*Math.cos(theta))+"%",top:(50+36*Math.sin(theta))+"%"}}
-                            aria-label={"Choisir "+choice} onClick={()=>attempt(choice)}><MathText text={choice}/></button>;
-                        })}
-                      </div>
-                      <div className="orbit-controls">
-                        <button aria-label="Tourner la roue vers la gauche" onClick={()=>setAngle(angle-60)}>↶</button>
-                        <span>Tourne la roue, puis choisis</span>
-                        <button aria-label="Tourner la roue vers la droite" onClick={()=>setAngle(angle+60)}>↷</button>
-                      </div>
-                    </div>
-                  </>}
 
                   {current.kind==="rule"&&<div className="rules">
                     {current.choices.map(choice=><button key={choice} className="rule-choice" onClick={()=>attempt(choice)}><MathText text={choice}/></button>)}
@@ -799,7 +777,7 @@ function DeriveLab() {
                         <span className={"answer-shell"+(/[\/^]/.test(answer)?" typeset":"")}>
                           <input className="answer" ref={inputRef} value={answer.replace(/\*/g,"×").replace(/-/g,"−")}
                             style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
-                            aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder="…"
+                            aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder=""
                             readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
                             onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
                             onKeyDown={handleAnswerKey}/>
