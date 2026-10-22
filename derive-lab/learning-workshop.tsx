@@ -86,7 +86,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
        <button className="textbtn" onClick={()=>{dirty.current=true;setHint(!hint);}}>✧ Un indice</button>
        {hint&&<p className="hintbox">{stage.hint}</p>}
       </div>
-      <MathKeyboard entry={activeEntry} onValidate={validate} canValidate={!!ready} onSign={()=>{if(stage.layout==="sum")signToggle(active);else changed(active,answers[active]?.startsWith("-")?answers[active].slice(1):"-"+(answers[active]||""));}}/>
+      <MathKeyboard entry={activeEntry} onValidate={validate} canValidate={!!ready} onSign={()=>{if(stage.layout==="sum")signToggle(active);else activeEntry.current?.toggleSign();}}/>
     </div>}
    </>}
   </div>

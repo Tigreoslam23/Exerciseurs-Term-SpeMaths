@@ -1,6 +1,6 @@
 import * as React from "react";
 import {MathText} from "./math-display";
-export type EntryHandle={insert:(text:string)=>void;erase:()=>void;clear:()=>void;next:()=>void;focus:()=>void};
+export type EntryHandle={insert:(text:string)=>void;erase:()=>void;clear:()=>void;next:()=>void;focus:()=>void;toggleSign:()=>void};
 export const MathEntry=React.forwardRef<EntryHandle,{value:string;label:string;active:boolean;onChange:(value:string)=>void;onActivate:()=>void;onSubmit:()=>void}>(({value,label,active,onChange,onActivate,onSubmit},forwarded)=>{
  const input=React.useRef<HTMLInputElement>(null),selection=React.useRef<[number,number]>([value.length,value.length]);
  const place=(from:number,to=from)=>{selection.current=[from,to];requestAnimationFrame(()=>{input.current?.focus({preventScroll:true});input.current?.setSelectionRange(from,to);});};
@@ -12,7 +12,10 @@ export const MathEntry=React.forwardRef<EntryHandle,{value:string;label:string;a
  }
  function erase(){const [from,to]=selection.current;const begin=from===to?Math.max(0,from-1):from;onChange(value.slice(0,begin)+value.slice(to));place(begin);}
  function next(){const start=selection.current[1],index=value.indexOf("□",start),target=index<0?value.indexOf("□"):index;if(target>=0)place(target,target+1);else place(value.length);}
- React.useImperativeHandle(forwarded,()=>({insert,erase,next,clear:()=>{onChange("");place(0);},focus:()=>place(value.length)}));
+ React.useImperativeHandle(forwarded,()=>({insert,erase,next,clear:()=>{onChange("");place(0);},focus:()=>place(value.length),toggleSign:()=>{
+  const next=value.startsWith("-(")&&value.endsWith(")")?value.slice(2,-1):value.startsWith("-")?value.slice(1):/[+-]/.test(value.slice(1))?"-("+value+")":"-"+value;
+  onChange(next);place(next.length);
+ }}));
  const selectSlot=(n:number)=>{let index=-1;for(let i=0;i<=n;i++)index=value.indexOf("□",index+1);onActivate();place(index,index+1);};
  return <span className={"math-entry"+(active?" active":"")+(value?" has-value":"")}>
   <input ref={input} value={value} readOnly inputMode="none" autoComplete="off" spellCheck={false} aria-label={label}

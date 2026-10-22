@@ -401,6 +401,10 @@ body{margin:0;background:#0b0e17}
 .derive .math-keyboard{position:sticky;top:15px;padding:16px;background:var(--bg)}
 .derive .math-keyboard .keys{gap:6px;margin:14px 0 8px}
 .derive .math-keyboard .key{height:43px;padding:5px;font-size:20px}
+.derive .math-keyboard .keys .key{display:flex;align-items:center;justify-content:center;min-height:43px}
+.derive .math-keyboard .keys .math-frac{font-size:.64em;line-height:1.05}
+.derive .math-keyboard .keys .math-numerator,.derive .math-keyboard .keys .math-denominator{padding:.015em .1em}
+.derive .math-keyboard>.morekeys,.derive .math-keyboard>.textbtn{display:block;width:100%;text-align:left;margin:7px 0;font-size:11px}
 .derive .math-keyboard .keytools{display:grid;grid-template-columns:1fr 1fr 1.8fr;gap:6px}
 .derive .math-keyboard .quick-functions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}
 .derive .math-keyboard .keytools .key{font-family:system-ui;font-size:12px}

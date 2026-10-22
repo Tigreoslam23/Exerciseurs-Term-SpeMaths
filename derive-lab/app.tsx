@@ -780,7 +780,7 @@ function DeriveLab() {
         )}
       </nav>
       <div className="header-right">
-        <button className="text-scale" aria-label={"Taille des explications : "+Math.round(textScale*100)+" %. Augmenter"} onClick={()=>{const next=textScale===1?1.1:textScale===1.1?1.2:1;setTextScale(next);try{localStorage.setItem("derive-lab-text-scale",String(next));}catch{}}}>A <span>{Math.round(textScale*100)} %</span></button>
+        <button className="text-scale" aria-label={"Taille des explications : "+Math.round(textScale*100)+" %. Augmenter"} onClick={()=>{const next=textScale===1?1.1:textScale===1.1?1.2:1;setTextScale(next);try{localStorage.setItem("derive-lab-text-scale",String(next));}catch{}}} title="Taille des explications : 100 %, 110 %, 120 %">A+ <span>{Math.round(textScale*100)} %</span></button>
         <span className="xp">✧ {progress.xp} XP</span>
         {!installed&&<button className="install-button" onClick={installApp} disabled={installBusy} data-install-ready={!!installPrompt} aria-label="Installer l’application">↓ <span>{installBusy?"Installation…":"Installer"}</span></button>}
         <button className="iconbutton" onClick={()=>setLight(!light)}
@@ -800,7 +800,7 @@ function DeriveLab() {
             const q=progress.stats[s.id],unlocked=available(s),master=mastered(s);
             return <div className="skill-item" key={s.id}><button onClick={()=>chooseSkill(s)}
               className={(s.id===skill.id?"selected ":"")+(!unlocked?"locked ":"")+(master?"completed":"")}>
-              <span className="skillnum">{master?"✓":!unlocked?"◇":String(SKILLS.indexOf(s)+1).padStart(2,"0")}</span>
+              <span className="skillnum">{master?"✓":String(SKILLS.indexOf(s)+1).padStart(2,"0")}</span>
               <span><strong>{s.title}</strong><small>{master?"Maîtrisée":!unlocked?"À débloquer":Math.min(q?.clean||0,3)+" / 3 réussites"}</small></span>
             </button>{s.id===skill.id&&<button className="skill-info-button" aria-label="Informations sur cette compétence" aria-expanded={infoOpen} onClick={()=>setInfoOpen(!infoOpen)}>ⓘ</button>}
             {s.id===skill.id&&infoOpen&&skillInfo()}</div>;
