@@ -19,7 +19,12 @@ export function substitutedRule(pair:AssemblyPair):string{
     (["u","v","du","dv"] as const).map(role=>[role,compactMath(pair[role])])
   );
   const first=`(${du})*(${v})`,second=`(${u})*(${dv})`;
-  return pair.operation==="quotient"?`(${first}-${second})/(${v})^2`:`${first}+${second}`;
+  if(pair.operation==="quotient"){
+    const grouped=(value:string)=>/[+-]/.test(value.slice(1))||value.startsWith("-")?`(${value})`:value;
+    const multiply=(a:string,b:string)=>a==="1"?grouped(b):b==="1"?grouped(a):`${grouped(a)}*${grouped(b)}`;
+    return `(${multiply(du,v)}-${multiply(u,dv)})/(${v})^2`;
+  }
+  return `${first}+${second}`;
 }
 
 export function RuleAssembly({pair,onComplete,onError}:{pair:AssemblyPair;onComplete:()=>void;onError:()=>void}){
@@ -35,6 +40,8 @@ export function RuleAssembly({pair,onComplete,onError}:{pair:AssemblyPair;onComp
   const required=pair.operation==="quotient"?targets:targets.slice(0,4);
   const count=required.filter(target=>placed[target.id]).length;
   const ready=count===required.length;
+  const quotient=pair.operation==="quotient";
+  const nextTarget=required.find(target=>!placed[target.id]);
 
   function cancel(){
     drag.current=null;setGhost(null);setOver(null);
@@ -100,37 +107,41 @@ export function RuleAssembly({pair,onComplete,onError}:{pair:AssemblyPair;onComp
       }}
       onPointerCancel={cancel} onLostPointerCapture={cancel}
       onClick={()=>{if(suppressClick.current){suppressClick.current=false;return;}setPicked(role);setMessage(null);}}>
-      <MathText text={pair[role]} compact/><span className="assembly-grip" aria-hidden="true">⠿</span>
+      {quotient&&<span className="source-role"><MathText text={labels[role]+" = "}/></span>}<MathText text={pair[role]} compact/><span className="assembly-grip" aria-hidden="true">⠿</span>
     </button>;
   }
   function slot(id:string){
     const target=targets.find(target=>target.id===id)!,filled=placed[id],value=pair[target.role];
     const grouped=/[+-]/.test(value.slice(1))||value.startsWith("-");
-    return <button className={"assembly-slot"+(filled?" filled":"")+(picked&&!filled?" ready":"")+(over===id?" over":"")}
+    return <button className={"assembly-slot"+(filled?" filled":"")+(picked&&!filled?" ready":"")+(over===id?" over":"")+(quotient&&nextTarget?.id===id?" next-target":"")}
       data-assembly-target={id} disabled={filled} aria-label={"Déposer "+target.description}
       onClick={()=>{if(picked)place(picked,id);else setMessage({good:true,text:"Sélectionne une boîte du tableau, puis touche sa place dans la formule."});}}>
       <MathText text={filled?(grouped?"("+value+")":value):labels[target.role]} compact/>
-      {!filled&&<span className="assembly-drop-hint">Déposer</span>}
+      {!filled&&!quotient&&<span className="assembly-drop-hint">Déposer</span>}
     </button>;
   }
   const first=<span className="assembly-term">{slot("first-du")}<MathText text=" × "/>{slot("first-v")}</span>;
   const second=<span className="assembly-term"><MathText text={pair.operation==="quotient"?" − ":" + "}/>{slot("second-u")}<MathText text=" × "/>{slot("second-dv")}</span>;
-  return <div className="rule-assembly" ref={root}>
-    <div className="uv-workshop">
+  return <div className={"rule-assembly"+(quotient?" compact-quotient":"")} ref={root}>
+    {quotient?<>
+      <div className="quotient-source-tray" aria-label="Blocs à placer dans la formule">{(["u","du","v","dv"] as Role[]).map(role=><React.Fragment key={role}>{source(role)}</React.Fragment>)}</div>
+      <p className="assembly-help">Glisse une carte, ou touche la carte puis sa place. Les cartes sont réutilisables.</p>
+      <div className="quotient-rule"><MathText text="(u/v)' = (u'v-uv')/v^2"/></div>
+    </>:<div className="uv-workshop">
       <div className="uv-rule"><span>Règle du {pair.operation==="quotient"?"quotient":"produit"}</span><MathText text={pair.operation==="quotient"?"(u/v)' = (u'v-uv')/v^2":"(uv)' = u'v+uv'"}/></div>
       {([['u','du'],['v','dv']] as Role[][]).map(([role,derivative])=><div className="uv-row" key={role}>
         <div className="uv-function"><MathText text={labels[role]+"(x) = "}/>{source(role)}</div>
         <div className="uv-derivative"><MathText text={labels[derivative]+"(x) = "}/>{source(derivative)}</div>
       </div>)}
       <p className="assembly-help">Glisse les boîtes du tableau dans la formule, ou sélectionne une boîte puis sa destination. Chaque boîte peut servir plusieurs fois.</p>
-    </div>
+    </div>}
     <div className="assembly-equation" aria-label="Formule à reconstruire">
       <div className="assembly-prefix"><MathText text="f'(x) = "/></div>
       {pair.operation==="quotient"?<div className="assembly-fraction"><div className="assembly-numerator">{first}{second}</div><div className="assembly-denominator">{slot("denominator-v")}<sup>2</sup></div></div>:<div className="assembly-product">{first}{second}</div>}
     </div>
-    <div className="assembly-progress" aria-live="polite">{count} / {required.length} emplacements complétés</div>
+    <div className="assembly-progress" aria-live="polite">{count} / {required.length} emplacements complétés{quotient&&nextTarget&&<span> — Place {labels[nextTarget.role].replace("'","′")}{nextTarget.id==="denominator-v"?" au dénominateur":" dans le numérateur"}.</span>}</div>
     {message&&<div role="status" className={"feedback"+(message.good?" good":"")}>{message.text}</div>}
-    <div className="apply-under"><button className="primary validate-assembly" disabled={!ready} onClick={onComplete}>Développer et simplifier <span>→</span></button></div>
+    <div className="apply-under"><button className="primary validate-assembly" disabled={!ready} onClick={onComplete}>{quotient?"Développer le numérateur":"Développer et simplifier"} <span>→</span></button></div>
     {ghost&&<div className="factor-ghost reference" aria-hidden="true" style={{left:Math.max(60,Math.min(window.innerWidth-60,ghost.x)),top:ghost.y}}><MathText text={pair[ghost.role]} compact/></div>}
   </div>;
 }

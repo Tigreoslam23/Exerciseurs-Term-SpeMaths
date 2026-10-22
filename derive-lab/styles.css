@@ -293,3 +293,61 @@ body{margin:0;background:#0b0e17}
 .derive .specific-rule>.math{font-size:30px;max-width:100%;overflow-x:auto;padding:6px 0}
 .derive .specific-rule>.primary{width:auto;padding:10px 16px;font-size:12px;gap:12px}
 @media(max-width:650px){.derive .assembly-equation{font-size:20px}.derive .assembly-slot{width:74px;min-width:60px;min-height:57px;font-size:20px}.derive .assembly-term{gap:4px}.derive .assembly-prefix{font-size:25px}.derive .assembly-grip{font-size:14px;right:4px}.derive .specific-rule{padding:16px}.derive .specific-rule>.math{font-size:26px}}
+
+/* Quotient : une fraction stable et une seule tâche active. */
+.derive .quotient-phases{display:flex;justify-content:space-between;gap:5px;font-size:10px;color:var(--muted);margin:-12px 0 18px}
+.derive .quotient-phases .past{color:var(--green)}
+.derive .quotient-phases .current{color:var(--purple);font-weight:750}
+.derive .quotient-source-tray,.derive .quotient-reference{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.derive .compact-quotient .assembly-source{min-height:46px;display:flex;flex-direction:row;gap:5px;padding:7px 21px 7px 9px;font-size:20px;border-radius:10px}
+.derive .compact-quotient .source-role{color:var(--muted);font-size:16px}
+.derive .compact-quotient .assembly-grip{font-size:14px;right:5px}
+.derive .compact-quotient .assembly-help{font-size:10px;margin:8px 0 10px;line-height:1.5}
+.derive .quotient-rule{font-size:17px;color:var(--muted);text-align:center;margin:8px 0 12px}
+.derive .compact-quotient .assembly-equation{margin:12px 0;display:flex;align-items:center;gap:6px}
+.derive .compact-quotient .assembly-prefix{flex:none;margin:0;font-size:23px}
+.derive .compact-quotient .assembly-fraction{flex:1;min-width:0}
+.derive .compact-quotient .assembly-numerator{gap:7px 2px;padding:0 0 9px}
+.derive .compact-quotient .assembly-term{gap:2px;font-size:16px}
+.derive .compact-quotient .assembly-slot{width:auto;min-width:45px;min-height:45px;padding:5px;font-size:18px}
+.derive .compact-quotient .assembly-denominator{padding-top:9px}
+.derive .compact-quotient .assembly-denominator>.assembly-slot{min-width:78px}
+.derive .compact-quotient .next-target{outline:2px solid var(--purple);outline-offset:3px;background:rgba(184,164,255,.14)}
+.derive .compact-quotient .assembly-progress{margin:12px 0;font-size:10px;line-height:1.6}
+.derive .compact-quotient .feedback{font-size:11px;padding:10px 12px;margin:10px 0}
+.derive .compact-quotient .apply-under{margin-top:12px}
+.derive .quotient-in-progress .function-area{padding:12px 20px}
+.derive .quotient-in-progress .function-meta .overline,.derive .quotient-in-progress .function-note{display:none}
+.derive .quotient-in-progress .function-meta{justify-content:flex-end}
+.derive .quotient-in-progress .original{font-size:26px;margin:0;padding:0}
+.derive .quotient-board .stepper{margin-bottom:20px}
+.derive .quotient-board .instruction{margin-bottom:12px}
+.derive .quotient-recap{font-size:10px;color:var(--muted);margin-bottom:10px}
+.derive .quotient-recap summary{cursor:pointer;padding:6px 0;color:var(--purple)}
+.derive .quotient-reference{margin:8px 0}
+.derive .quotient-reference>span{border:1px solid var(--line);background:var(--bg);padding:6px 9px;border-radius:8px;font-size:17px;color:var(--green)}
+.derive .quotient-recap .pastline{font-size:18px}
+.derive .quotient-previous{font-size:22px;overflow-x:auto;padding:10px 4px;color:var(--muted);border-bottom:1px solid var(--line)}
+.derive .quotient-board .working{justify-content:center;margin:10px 0;font-size:27px}
+.derive .quotient-board .math-frac .answer{font-size:23px}
+.derive .quotient-board .answer-render{font-size:23px;padding:8px}
+.derive .quotient-board .input-help{font-size:10px;margin:5px 0 10px}
+.derive .quotient-board .inline-keyboard{margin-top:10px;padding:13px}
+.derive .quotient-board .inline-keyboard .toolsub,.derive .quotient-board .inline-keyboard .keyboard-note{display:none}
+.derive .quotient-board .inline-keyboard .keys{gap:6px;margin-top:10px}
+.derive .quotient-board .inline-keyboard .key{height:42px;font-size:19px}
+.derive .quotient-board .feedback{font-size:11px;padding:10px 12px;margin:10px 0}
+@media(max-width:650px){
+  .derive .quotient-board .steps{padding:16px 14px 20px}
+  .derive .quotient-in-progress .function-area{padding:10px 14px}
+  .derive .quotient-in-progress .domain{font-size:9px}
+  .derive .quotient-phases{font-size:9px;gap:3px;margin-bottom:14px}
+  .derive .quotient-previous{font-size:20px}
+  .derive .quotient-board .working{font-size:24px}
+  .derive .quotient-board .working .answer{max-width:240px}
+  .derive .compact-quotient .assembly-prefix{font-size:20px}
+  .derive .compact-quotient .assembly-equation{gap:3px}
+  .derive .compact-quotient .assembly-term{font-size:14px;gap:1px}
+  .derive .compact-quotient .assembly-slot{min-width:38px;font-size:16px;padding:5px 3px}
+}
+

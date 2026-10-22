@@ -8,7 +8,7 @@ type PairRole = "u" | "v";
 type Pair = AssemblyPair;
 type FactorRole = "k" | PairRole;
 type FactorDrag = { role: FactorRole; pointerId: number; startX: number; startY: number; moved: boolean };
-type Step = { kind: StepKind; prompt: string; expected: string; prefix: string; suffix: string; hint: string; choices: string[]; solved: string };
+type Step = { kind: StepKind; prompt: string; expected: string; prefix: string; suffix: string; hint: string; choices: string[]; solved: string; form?: "expanded" | "number" };
 type Exercise = { id: string; expression: string; domain: string; final: string; coefficient?: string; base?: string; pair?: Pair; steps: Step[] };
 type Skill = { id: string; title: string; subtitle: string; level: number; deps: string[] };
 type Result = { solved: number; clean: number; history: boolean[] };
@@ -367,7 +367,16 @@ function makeTask(id: string, first = false): Exercise {
  if(id==="inverse")t={expression:`${a}/x`,domain:"pour x ≠ 0",final:`-${a}/x^2`,coefficient:String(a),base:"1/x",steps:[move(a,"1/x"),derivative("-1/x^2","(1/x)' = -1/x².",`f'(x) = ${a}*`,""),input(String(-a),"f'(x) = ","/x^2","Le signe moins vient de la dérivée de 1/x.")]};
  if(id==="sqrt"){const reduced=reducedSqrt(a,"(x)");t={expression:`${a}*sqrt(x)`,domain:"pour x > 0",final:reduced.final,coefficient:String(a),base:"sqrt(x)",steps:[move(a,"sqrt(x)"),derivative("1/(2sqrt(x))","(√x)' = 1/(2√x).",`f'(x) = ${a}*`,""),input(reduced.numerator,"f'(x) = ",reduced.suffix,reduced.hint)]};}
  if(id==="product"){const u=`x^2+${b}`,v=`${a}*x+${c}`,final=poly([a*b,2*c,3*a]);t={expression:`(${u})*(${v})`,domain:"sur ℝ",final,pair:{operation:"product",u,v,du:"2*x",dv:String(a)},steps:[identifyPair("product"),step("input","Applique la règle du produit.",`2*x*(${v})+(${u})*${a}`,"f'(x) = ","","Remplace u, v, u′ et v′ dans u′v + uv′."),input(final,"f'(x) = ","","Développe les deux produits, puis regroupe les termes de même degré.")]};}
- if(id==="quotient"){const v=`x+${c}`,u=poly([b,a]),k=a*c-b;t={expression:`(${u})/(${v})`,domain:`pour x ≠ -${c}`,final:`${k}/(${v})^2`,pair:{operation:"quotient",u,v,du:String(a),dv:"1"},steps:[identifyPair("quotient"),step("input","Complète le numérateur de la dérivée.",`${a}*(${v})-(${u})*1`,"f'(x) = (",`)/(${v})^2`,"Au numérateur, écris u′v − uv′ dans cet ordre."),input(String(k),"f'(x) = ",`/(${v})^2`,`Simplifie ${a}(${compactMath(v)})−(${compactMath(u)}). Les termes en x s'annulent.`)]};}
+ if(id==="quotient"){
+   const v=`x+${c}`,u=poly([b,a]),k=a*c-b;
+   const developed=step("input","Développe le numérateur.",`${a}*x+${a*c}-${a}*x-${b}`,"f'(x) = ",`/(${v})^2`,"Développe le premier produit, puis distribue le signe moins devant le second. Garde les termes en x à cette étape.");
+   developed.form="expanded";
+   developed.solved=`f'(x) = (${developed.expected})/(${v})^2`;
+   const reduced=input(String(k),"f'(x) = ",`/(${v})^2`,"Les termes en x s’annulent. Calcule ensuite la différence des constantes.");
+   reduced.prompt="Réduis le numérateur.";reduced.form="number";
+   t={expression:`(${u})/(${v})`,domain:`pour x ≠ -${c}`,final:`${k}/(${v})^2`,pair:{operation:"quotient",u,v,du:String(a),dv:"1"},steps:[identifyPair("quotient"),step("assemble","Construis la formule.","assemble","","","Place u′ puis v, u puis v′, et enfin v au dénominateur.",[]),developed,reduced]};
+ }
+
  if(id==="exp")t={expression:`${a}*e^x`,domain:"sur ℝ",final:`${a}*e^x`,coefficient:String(a),base:"e^x",steps:[move(a,"e^x"),derivative("e^x","La fonction exponentielle est sa propre dérivée.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","*e^x","Le coefficient est conservé.")]};
  if(id==="ln")t={expression:`${a}*ln(x)`,domain:"pour x > 0",final:`${a}/x`,coefficient:String(a),base:"ln(x)",steps:[move(a,"ln(x)"),derivative("1/x","(ln x)' = 1/x.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","/x","Conserve le coefficient au numérateur.")]};
  const u=`(${a}*x+${b})`,chain=()=>[rule("u'×g'(u)","Dérive la fonction extérieure, puis multiplie par u'."),derivative(String(a),"u est affine : u' = a.","u'(x) = ","")];
@@ -428,6 +437,7 @@ function DeriveLab() {
 
   const skill=SKILLS.find(s=>s.id===exercise.id)!;
   const current=exercise.steps[index];
+  const quotient=exercise.pair?.operation==="quotient";
   const stat=progress.stats[skill.id]||{solved:0,clean:0,history:[]};
   const available=(s:Skill,p=progress)=>s.deps.every(id=>(p.stats[id]?.clean||0)>=3);
   const mastered=(s:Skill)=>{
@@ -446,7 +456,7 @@ function DeriveLab() {
   React.useEffect(()=>{
     if(!done&&(current?.kind==="input"||(current?.kind==="pair"&&pairActive))){
       inputRef.current?.focus({preventScroll:true});
-      if(current.kind==="input")completionRef.current?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+      if(current.kind==="input")(quotient?completionRef.current?.closest(".steps"):completionRef.current)?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
       else inputRef.current?.closest(".uv-row")?.scrollIntoView({block:"nearest"});
     }
   },[index,done,exercise,pairActive]);
@@ -509,6 +519,12 @@ function DeriveLab() {
 
   function attempt(value:string,reveal=false){
     if(done||!current||accepted.current===index)return;
+    if(current.form==="expanded"&&(!/x/i.test(value)||/[()]/.test(value))){
+      setHadError(true);setFeedback({good:false,text:"Développe d’abord les deux produits, sans parenthèses, en gardant les termes en x. Tu réduiras à l’étape suivante."});return;
+    }
+    if(current.form==="number"&&!/^[+−-]?\d+(?:[.,]\d+)?$/.test(value.trim())){
+      setHadError(true);setFeedback({good:false,text:"Réduis maintenant les termes en x, puis saisis uniquement le nombre obtenu au numérateur."});return;
+    }
     const correct=current.kind==="input"?equivalent(value,current.expected):value===current.expected;
     if(!correct){
       setHadError(true);
@@ -785,7 +801,7 @@ function DeriveLab() {
           </div>
 
           <div className="studio">
-            <section className="panel board" aria-label="Zone de dérivation">
+            <section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
               <div className="function-area">
                 <div className="function-meta">
                   <span className="overline">Fonction à transformer</span>
@@ -817,7 +833,15 @@ function DeriveLab() {
                   {exercise.steps.map((_,i)=><span key={i} className={"stepdot "+(done||i<index?"past":i===index?"current":"")}/>)}
                   <span className="stepnumber">{done?exercise.steps.length:index+1} / {exercise.steps.length}</span>
                 </div>
-                {exercise.steps.slice(0,done?exercise.steps.length:index).map((s,i)=>
+                {quotient&&<div className="quotient-phases" aria-label="Parcours du quotient">{["Identifier","Construire","Développer","Réduire"].map((label,i)=><span key={label} className={done||i<index?"past":i===index?"current":""}>{label}{(done||i<index)&&" ✓"}</span>)}</div>}
+                {quotient&&index>1&&<>
+                  <details className="quotient-recap"><summary>Voir u, v et les étapes validées</summary>
+                    <div className="quotient-reference">{(["u","du","v","dv"] as const).map(role=><span key={role}><MathText text={({u:"u",du:"u'",v:"v",dv:"v'"})[role]+" = "+exercise.pair![role]} compact/></span>)}</div>
+                    {exercise.steps.slice(1,index-1).map((step,i)=><div className="pastline" key={i}><MathText text={step.solved} compact/></div>)}
+                  </details>
+                  <div className="quotient-previous" aria-label="Calcul précédent"><MathText text={exercise.steps[index-1].solved} compact/></div>
+                </>}
+                {!quotient&&exercise.steps.slice(0,done?exercise.steps.length:index).map((s,i)=>
                   <React.Fragment key={i}>
                     {s.kind==="move"&&<div className="pastline identification-summary"><span className="tick">✓</span><MathText text={"k = "+exercise.coefficient+" ; u(x) = "+exercise.base}/></div>}
                     {s.kind==="pair"&&current.kind!=="assemble"&&pairTable(true)}
@@ -826,14 +850,14 @@ function DeriveLab() {
                 )}
 
                 {!done?<>
-                  <div className="step-title"><span className="number">{index+1}</span>{current.prompt}</div>
+                  <div className="step-title"><span className="number">{index+1}</span>{quotient&&current.kind==="assemble"?"Construis la formule.":current.prompt}</div>
                   <p className="instruction" id="factor-instruction">
                     {current.kind==="move"&&"Glisse chaque boîte de la fonction sur k ou u(x). Tu peux aussi sélectionner une boîte, puis toucher sa destination."}
                     {current.kind==="pair"&&(exercise.pair!.operation==="quotient"?"Place le numérateur dans u et le dénominateur dans v. Saisis ensuite leurs dérivées dans les cases en face.":"Place le premier facteur dans u et le second dans v. Saisis leurs dérivées dans les cases en face.")}
-                    {current.kind==="assemble"&&"Utilise les quatre boîtes validées pour remplacer les lettres de la formule. Le clavier servira ensuite à développer et simplifier."}
+                    {current.kind==="assemble"&&(quotient?"Remplace chaque lettre par sa carte. Le carré reste autour du dénominateur.":"Utilise les quatre boîtes validées pour remplacer les lettres de la formule. Le clavier servira ensuite à développer et simplifier.")}
                     {current.kind==="formula"&&"Calcule u′, puis multiplie par l’exponentielle de u."}
                     {current.kind==="rule"&&"Observe la structure de la fonction avant de commencer les calculs."}
-                    {current.kind==="input"&&"Complète uniquement la case avec le clavier, puis valide."}
+                    {current.kind==="input"&&(quotient?(current.form==="expanded"?"Écris le numérateur développé. Conserve les termes en x pour la prochaine étape.":"Regroupe les termes en x, puis les constantes. Complète le numérateur."):"Complète uniquement la case avec le clavier, puis valide.")}
                   </p>
 
 
@@ -851,7 +875,7 @@ function DeriveLab() {
 
                   {(current.kind==="input"||(current.kind==="pair"&&!!pairActive))&&<div className="math-completion" ref={completionRef}>
                     {current.kind==="input"&&<div className="working">
-                      <MathText text={current.prefix+"□"+current.suffix} compact={index===exercise.steps.length-1} slot={
+                      <MathText text={current.prefix+"□"+current.suffix} compact={quotient||index===exercise.steps.length-1} slot={
                         <span className={"answer-shell"+(answer?" typeset":"")}>
                           <input className="answer" ref={inputRef} value={answer.replace(/\*/g,"×").replace(/-/g,"−")}
                             style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
@@ -859,12 +883,12 @@ function DeriveLab() {
                             readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
                             onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
                             onKeyDown={handleAnswerKey}/>
-                          {answer&&<span className="answer-render" aria-hidden="true"><MathText text={answer} compact={index===exercise.steps.length-1}/></span>}
+                          {answer&&<span className="answer-render" aria-hidden="true"><MathText text={answer} compact={quotient||index===exercise.steps.length-1}/></span>}
                         </span>
                       }/>
                     </div>}
                     <p className="input-help" id="math-input-help">Utilise le clavier maths juste en dessous. Touche la case pour placer le curseur.</p>
-                    {answer&&<div className="input-reading">Lecture : <MathText text={current.kind==="pair"?pairActive+"'(x) = "+answer:current.prefix+answer+current.suffix} compact={index===exercise.steps.length-1}/></div>}
+                    {answer&&!quotient&&<div className="input-reading">Lecture : <MathText text={current.kind==="pair"?pairActive+"'(x) = "+answer:current.prefix+answer+current.suffix} compact={quotient||index===exercise.steps.length-1}/></div>}
                     {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
                     {hint&&<div className="hintbox"><MathText text={current.hint}/></div>}
                     <section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
@@ -889,12 +913,12 @@ function DeriveLab() {
                       onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||key}/></button>
                   )}
                 </div>}
-                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={validateAnswer}>{current.kind==="pair"?"Valider "+pairActive+"′(x)":"Valider la réponse"} <span>↗</span></button>
+                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={validateAnswer}>{current.kind==="pair"?"Valider "+pairActive+"′(x)":quotient?"Valider le numérateur":"Valider la réponse"} <span>↗</span></button>
                 <div className="keyboard-note">Sur ordinateur, le clavier physique fonctionne aussi.</div>
               </section>
                   </div>}
 
-                  {feedback&&current.kind!=="input"&&!(current.kind==="pair"&&pairActive)&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
+                  {feedback&&current.kind!=="input"&&current.kind!=="assemble"&&!(current.kind==="pair"&&pairActive)&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
                   {hint&&current.kind!=="input"&&!(current.kind==="pair"&&pairActive)&&<div className="hintbox"><MathText text={current.hint}/></div>}
                   <div className="actions">
                     <button className="textbtn" onClick={showHint}>✧ Un indice</button>
