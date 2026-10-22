@@ -498,9 +498,11 @@ body{margin:0;background:#0b0e17}
 .derive .editable-fraction .math-entry{min-width:88px}
 .derive .keyboard-dock .tag{display:none}
 .derive .keyboard-dock .keyboard-note{font-size:10px;color:var(--muted)}
-@container(min-width:640px){.derive .learning-board .workshop-header{grid-template-columns:minmax(0,1fr) minmax(0,.95fr);align-items:start}}
+@container(min-width:640px){.derive .learning-board .workshop-header{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}}
 @media(min-width:701px){.derive .math-completion{display:block}}
 @media(min-width:901px) and (max-width:1200px){.derive .layout{grid-template-columns:205px minmax(0,1fr)}.derive .main{padding:26px 20px}.derive .workshop-layout,.derive .studio.legacy-workshop{grid-template-columns:minmax(0,1fr) 245px;gap:16px}.derive .keyboard-dock>.keyboard{padding:12px}}
 @media(max-width:900px) and (min-width:701px){.derive .main{padding:24px 18px}.derive .workshop-layout,.derive .studio.legacy-workshop{grid-template-columns:minmax(0,1fr) 255px;gap:16px}}
 @media(max-width:700px){.derive .workshop-layout,.derive .studio.legacy-workshop{grid-template-columns:minmax(0,1fr);gap:16px}.derive .keyboard-dock{position:static}.derive .learning-board{--work-math-size:27px}.derive .learning-board .workshop-header{padding:18px;gap:15px}.derive .header-context{padding:13px}.derive .parallel-response{gap:20px}.derive .math-entry,.derive .signed-answer .math-entry{font-size:var(--work-math-size);min-width:75px;min-height:48px;padding:3px 7px}.derive .sum-response{gap:12px 7px}}
 
+
+.derive .learning-board .math-entry-render .math{line-height:1.3}
