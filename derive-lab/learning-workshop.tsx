@@ -5,6 +5,11 @@ import {MathText} from "./math-display";
 import {MathEntry,MathKeyboard,type EntryHandle} from "./math-entry";
 import {RuleAssembly,substitutedRule} from "./rule-assembly";
 
+function RuleFormula({text}:{text:string}){
+ const [left,right]=text.split(" = ");
+ return text.startsWith("(g(ax+b))'")?<span className="affine-rule-equation"><MathText text={left}/><MathText text={"= "+right}/></span>:<MathText text={text}/>;
+}
+
 function Identification({step,onComplete,onError}:{step:Extract<PlanStep,{kind:"identify"}>;onComplete:()=>void;onError:()=>void}){
  const [selected,setSelected]=React.useState<number|null>(null),[placed,setPlaced]=React.useState<number[]>([]),[message,setMessage]=React.useState("");
  const [ghost,setGhost]=React.useState<{index:number;x:number;y:number}|null>(null),root=React.useRef<HTMLDivElement>(null);
@@ -12,7 +17,7 @@ function Identification({step,onComplete,onError}:{step:Extract<PlanStep,{kind:"
  const targetAt=(x:number,y:number)=>{const el=document.elementFromPoint(x,y)?.closest<HTMLElement>('[data-identify-target]');return el&&root.current?.contains(el)?Number(el.dataset.identifyTarget):null;};
  const place=(source:number,target:number)=>{if(placed.includes(target))return;if(source!==target){onError();setMessage("Ce bloc ne correspond pas à cette fonction. Essaie l’autre emplacement.");return;}setPlaced(p=>[...p,target]);setSelected(null);setMessage("Bien placé.");};
  return <div className="identification-stage" ref={root}>
-  <div className="rule-banner"><MathText text={step.formula}/></div>
+  <div className="rule-banner"><RuleFormula text={step.formula}/></div>
   {step.rewrite&&<div className="rewrite"><span>On réécrit :</span><MathText text={"f(x) = "+step.rewrite}/></div>}
   <p>Glisse chaque bloc sur son étiquette, ou touche le bloc puis sa destination.</p>
   <div className="identify-sources">{step.items.map((item,i)=><button key={i} data-identify-source={i} disabled={placed.includes(i)} aria-label={"Sélectionner "+item.value} aria-pressed={selected===i} className={"identify-source"+(selected===i?" selected":"")}
@@ -72,7 +77,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
     {headerStage?<> {title}
      {stage.kind==="notice"&&<div className="notice-stage"><div className="rule-banner"><MathText text={stage.formula}/></div><p>{stage.explanation}</p><button className="primary" onClick={()=>advance()}>Utiliser cette règle <span>→</span></button></div>}
      {stage.kind==="identify"&&<Identification key={phase} step={stage} onComplete={()=>advance()} onError={flagError}/>}
-    </>:<><div className="overline">{context.kind==="identify"?"Forme identifiée":"La règle"}</div><div className="rule-banner"><MathText text={context.formula}/></div>{context.kind==="identify"&&<div className="identified-summary">{context.items.map((item,i)=><MathText key={i} text={item.label+" = "+item.value} compact/>)}</div>}</>}
+    </>:<><div className="overline">{context.kind==="identify"?"Forme identifiée":"La règle"}</div><div className="rule-banner"><RuleFormula text={context.formula}/></div>{context.kind==="identify"&&<div className="identified-summary">{context.items.map((item,i)=><MathText key={i} text={item.label+" = "+item.value} compact/>)}</div>}</>}
    </div>}
   </div>
   <div className="learning-steps">

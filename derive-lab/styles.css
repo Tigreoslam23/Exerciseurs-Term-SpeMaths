@@ -506,3 +506,7 @@ body{margin:0;background:#0b0e17}
 
 
 .derive .learning-board .math-entry-render .math{line-height:1.3}
+
+/* La règle de composition se coupe uniquement avant le signe égal. */
+.derive .affine-rule-equation{display:flex;flex-wrap:wrap;gap:.15em .25em;align-items:baseline}
+.derive .affine-rule-equation>.math{white-space:nowrap;display:inline-block}
