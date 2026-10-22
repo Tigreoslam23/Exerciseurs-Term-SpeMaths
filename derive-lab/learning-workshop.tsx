@@ -61,34 +61,44 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  const ready=stage.kind==="fill"&&stage.fields.every((_,i)=>answers[i]?.trim()&&!answers[i].includes("□"));
  const signToggle=(i:number)=>setSigns(s=>{const next=[...s];next[i]=s[i]===-1?1:-1;return next;});
  const entry=(i:number)=>stage.kind==="fill"?<MathEntry ref={el=>{entries.current[i]=el;}} value={answers[i]||""} label={stage.fields[i].label} active={active===i} onChange={value=>changed(i,value)} onActivate={()=>setActive(i)} onSubmit={validate}/>:null;
- return <section className="panel board learning-board" aria-label="Zone de dérivation">
-  <div className="function-area"><div className="function-meta"><span className="overline">Fonction à dériver</span><span className="domain">{plan.domain}</span></div><div className="original"><MathText text={"f(x) = "+plan.expression} compact/></div><p className="difficulty">{plan.difficulty}</p></div>
+ const context=plan.steps.find((step):step is Extract<PlanStep,{kind:"notice"|"identify"}>=>step.kind==="notice"||step.kind==="identify");
+ const headerStage=!finished&&(stage.kind==="notice"||stage.kind==="identify");
+ const title=<div className="step-title"><span className="number">{phase+1}</span>{stage.title}</div>;
+ return <div className="workshop-layout">
+ <section className="panel board learning-board" aria-label="Zone de dérivation">
+  <div className="function-area workshop-header">
+   <div className="function-overview"><div className="function-meta"><span className="overline">Fonction à dériver</span><span className="domain">{plan.domain}</span></div><div className="original"><MathText text={"f(x) = "+plan.expression} compact/></div><p className="difficulty">{plan.difficulty}</p></div>
+   {context&&<div className="header-context" aria-label={headerStage&&stage.kind==="identify"?"Identification de la fonction":"Règle de dérivation"}>
+    {headerStage?<> {title}
+     {stage.kind==="notice"&&<div className="notice-stage"><div className="rule-banner"><MathText text={stage.formula}/></div><p>{stage.explanation}</p><button className="primary" onClick={()=>advance()}>Utiliser cette règle <span>→</span></button></div>}
+     {stage.kind==="identify"&&<Identification key={phase} step={stage} onComplete={()=>advance()} onError={flagError}/>}
+    </>:<><div className="overline">{context.kind==="identify"?"Forme identifiée":"La règle"}</div><div className="rule-banner"><MathText text={context.formula}/></div>{context.kind==="identify"&&<div className="identified-summary">{context.items.map((item,i)=><MathText key={i} text={item.label+" = "+item.value} compact/>)}</div>}</>}
+   </div>}
+  </div>
   <div className="learning-steps">
    <div className="stepper" aria-label={"Étape "+(phase+1)+" sur "+plan.steps.length}>{plan.steps.map((_,i)=><span key={i} className={"stepdot "+(finished||i<phase?"past":i===phase?"current":"")}/>)}<span className="stepnumber">{phase+1} / {plan.steps.length}</span></div>
    {finished?<div className="success" role="status"><span className="earned">{exploring?"EXPLORATION":"+ "+earned+" XP"}</span><h2>Dérivée reconstruite.</h2><div className="result"><MathText text={"f'(x) = "+plan.final} compact/></div><p>{dirty.current?"Reprends un autre exemple pour consolider la méthode.":"Toutes les étapes sont justes. Continue ton parcours."}</p><button className="primary" onClick={onNext}>Fonction suivante <span>→</span></button>{unlocks.length>0&&<p className="unlock-message">Nouveaux ateliers : {unlocks.join(", ")}.</p>}</div>:<>
-    <div className="step-title"><span className="number">{phase+1}</span>{stage.title}</div>
+    {!headerStage&&title}
     {lastWork&&<details className="previous-work"><summary>Voir le calcul précédent</summary><MathText text={lastWork} compact/></details>}
-    {stage.kind==="notice"&&<div className="notice-stage"><div className="rule-banner"><MathText text={stage.formula}/></div><p>{stage.explanation}</p><button className="primary" onClick={()=>advance()}>Utiliser cette règle <span>→</span></button></div>}
-    {stage.kind==="identify"&&<Identification key={phase} step={stage} onComplete={()=>advance()} onError={flagError}/>}
     {stage.kind==="assemble"&&<RuleAssembly key={phase} pair={stage.pair} onComplete={()=>advance("f'(x) = "+substitutedRule(stage.pair))} onError={flagError}/>}
     {stage.kind==="fill"&&<div className="response-layout">
       <div className="response-content">
-       {stage.references&&stage.layout!=="sum"&&<div className="reference-strip">{stage.references.map((s,i)=><span key={i}><MathText text={stage.fields.length===stage.references!.length?"("+s+")'":s} compact/></span>)}</div>}
        {stage.layout==="sum"?<>
-        <div className="sum-rule-reference"><MathText text="f'(x) = "/></div>
-        <div className="sum-response">{stage.fields.map((field,i)=><div className="sum-term" key={i}>
-         <div className="term-reference"><MathText text={"("+stage.references![i]+")' = "} compact/></div>
+        <div className="reference-equation"><MathText text={"f'(x) = "+stage.references!.map(s=>"("+s+")'").join(" + ")} compact/></div>
+        <div className="sum-response"><MathText text="f'(x) = "/>{stage.fields.map((field,i)=><div className="sum-term" key={i}>
+         {id==="sum-pair"&&<span className="sum-field-label"><MathText text={field.label+" = "}/></span>}
          <div className="signed-answer"><button className="sign-switch" aria-label={"Signe du terme "+(i+1)} onClick={()=>signToggle(i)}>{signs[i]===-1?"−":"+"}</button>{entry(i)}</div>
         </div>)}</div>
-       </>:stage.layout==="fraction"?<div className="fraction-response"><MathText text={stage.before||"f'(x) = "}/><span className="math-frac editable-fraction"><span className="math-numerator">{entry(0)}</span><span className="math-denominator">{entry(1)}</span></span></div>:stage.fields.length>1?<div className="parallel-response">{stage.fields.map((field,i)=><label key={i}><span>{field.label}</span>{entry(i)}</label>)}</div>:<div className="single-response"><MathText text={(stage.before||"f'(x) = ")+"□"+(stage.after||"")} compact slot={entry(0)}/></div>}
+       </>:stage.layout==="fraction"?<div className="fraction-response"><MathText text={stage.before||"f'(x) = "}/><span className="math-frac editable-fraction"><span className="math-numerator">{entry(0)}</span><span className="math-denominator">{entry(1)}</span></span></div>:stage.fields.length>1?<div className="parallel-response">{stage.fields.map((field,i)=><div className="derivative-field" key={i}><div className="derivative-reference"><MathText text={field.label.replace(/′/g,"'")+" = "+(stage.references?.[i]?"("+stage.references[i]+")'":"")} compact/></div>{entry(i)}</div>)}</div>:<div className="single-response"><MathText text={(stage.before||"f'(x) = ")+"□"+(stage.after||"")} compact slot={entry(0)}/></div>}
        <p className="entry-help">Touche la case à compléter, puis utilise le clavier mathématique.</p>
        {feedback&&<div className="feedback" role="status">{feedback}</div>}
        <button className="textbtn" onClick={()=>{dirty.current=true;setHint(!hint);}}>✧ Un indice</button>
        {hint&&<p className="hintbox">{stage.hint}</p>}
       </div>
-      <MathKeyboard entry={activeEntry} onValidate={validate} canValidate={!!ready} onSign={()=>{if(stage.layout==="sum")signToggle(active);else activeEntry.current?.toggleSign();}}/>
     </div>}
    </>}
   </div>
- </section>;
+ </section>
+ <aside className="keyboard-dock"><MathKeyboard entry={activeEntry} enabled={!finished&&stage.kind==="fill"} onValidate={validate} canValidate={!!ready&&!finished} onSign={()=>{if(stage.kind==="fill"&&stage.layout==="sum")signToggle(active);else activeEntry.current?.toggleSign();}}/></aside>
+ </div>;
 }

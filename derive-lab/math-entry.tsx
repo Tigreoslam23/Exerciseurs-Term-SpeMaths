@@ -33,13 +33,14 @@ export const MathEntry=React.forwardRef<EntryHandle,{value:string;label:string;a
   <span className="math-entry-render"><MathText text={value||" "} compact slot={n=><button type="button" className="fraction-hole" aria-label={label+" : case "+(n+1)} onClick={()=>selectSlot(n)}>□</button>}/></span>
  </span>;
 });
-export function MathKeyboard({entry,onValidate,canValidate,onSign}:{entry:React.RefObject<EntryHandle>;onValidate:()=>void;canValidate:boolean;onSign:()=>void}){
+export function MathKeyboard({entry,onValidate,canValidate,onSign,enabled=true}:{entry:React.RefObject<EntryHandle>;onValidate:()=>void;canValidate:boolean;onSign:()=>void;enabled?:boolean}){
  const [extra,setExtra]=React.useState(false);
  const insert=(s:string)=>entry.current?.insert(s);
  const keys=["7","8","9","+","−","4","5","6","×","fraction","1","2","3","(",")","0",".","x","x²","xⁿ"];
  const values:Record<string,string>={"−":"-","×":"*","fraction":"(□)/(□)","x²":"x^2","xⁿ":"x^(□)","√":"sqrt(□)","eˣ":"e^(□)","²":"^2","ln":"ln(□)","sin":"sin(□)","cos":"cos(□)"};
  return <section className="keyboard math-keyboard" aria-label="Clavier mathématique">
   <div className="tooltitle">Clavier mathématique</div>
+  <fieldset disabled={!enabled} aria-label="Touches du clavier mathématique">
   <div className="keys">{keys.map(key=><button className="key" key={key} aria-label={key==="fraction"?"Insérer une fraction":undefined} onPointerDown={e=>e.preventDefault()} onClick={()=>insert(values[key]||key)}>
    <MathText text={key==="fraction"?"□/□":key==="x²"?"x^2":key==="xⁿ"?"x^n":key}/>
   </button>)}</div>
@@ -49,6 +50,8 @@ export function MathKeyboard({entry,onValidate,canValidate,onSign}:{entry:React.
   {extra&&<div className="extra">{["ln","sin","cos"].map(key=><button className="key" key={key} onPointerDown={e=>e.preventDefault()} onClick={()=>insert(values[key])}><MathText text={key}/></button>)}</div>}
   <button className="textbtn" onPointerDown={e=>e.preventDefault()} onClick={()=>entry.current?.clear()}>Vider la case</button>
   <button className="primary validate-key" disabled={!canValidate} onClick={onValidate}>Valider <span>→</span></button>
+  </fieldset>
+  {!enabled&&<p className="keyboard-state">Le clavier s’active lorsqu’une dérivée est à compléter.</p>}
   <p className="entry-help">Fraction : numérateur d’abord. Touche une case ou « Case suivante » pour continuer.</p>
  </section>;
 }

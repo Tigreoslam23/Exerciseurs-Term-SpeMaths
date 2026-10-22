@@ -753,6 +753,31 @@ function DeriveLab() {
     "sin":["sin()",true],"cos":["cos()",true],"1/x":["1/()",true]
   };
   const keyboardActive=!done&&(current?.kind==="input"||(current?.kind==="pair"&&!!pairActive&&!pairValidated[pairActive]));
+  const legacyKeyboard=<section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
+                <div className="tooltitle">Clavier mathématique</div>
+                <p className="toolsub">Compose ta réponse avec les touches ci-dessous.</p>
+                <div className="keys">
+                  {["7","8","9","+","−","4","5","6","×","÷","1","2","3","(",")","0",".","x","x²","xⁿ"].map(key=>
+                    <button key={key} disabled={!keyboardActive}
+                      aria-label={key==="÷"?"Insérer une fraction":undefined} className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
+                      onPointerDown={e=>e.preventDefault()}
+                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
+                  )}
+                </div>
+                <div className="keytools">
+                  <button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>insert("^2")}>a²</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={legacyNextHole}>Case suivante</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>{setAnswer(answer.startsWith("-")?answer.slice(1):"-"+answer);}}>+/−</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
+                  <button className="key" disabled={!keyboardActive} onClick={()=>{setAnswer("");inputRef.current?.focus({preventScroll:true});}}>Vider la case</button>
+                </div>
+                <button className="morekeys" aria-expanded={extraKeys} onClick={()=>setExtraKeys(!extraKeys)}>{extraKeys?"−":"+"} Fonctions & fractions</button>
+                {extraKeys&&<div className="extra">
+                  {["1/x","√","eˣ","ln","sin","cos"].map(key=>
+                    <button className="key" key={key} disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()}
+                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
+                  )}
+                </div>}
+                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={validateAnswer}>{current.kind==="pair"?"Valider "+pairActive+"′(x)":quotient?"Valider le numérateur":"Valider la réponse"} <span>↗</span></button>
+                <div className="keyboard-note">Sur ordinateur, le clavier physique fonctionne aussi.</div>
+              </section>;
   const rate=stat.solved?Math.round(100*stat.clean/stat.solved):0;
 
   function skillInfo(){return <div className="panel skill-progress inline-skill-info">
@@ -836,8 +861,8 @@ function DeriveLab() {
           </div>
           {infoOpen&&<div className="mobile-skill-info">{skillInfo()}</div>}
 
-          <div className="studio">
-            {skill.level===1?<LearningWorkshop key={skill.id+exerciseSerial} id={skill.id} round={stat.solved+(practiceCounts[skill.id]||0)} earned={earned} exploring={exploring} unlocks={newUnlocks} onComplete={finishWorkshop} onNext={()=>start(skill.id,exploring)}/>:<section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
+          <div className={"studio"+(skill.level===2?" legacy-workshop":"")}>
+            {skill.level===1?<LearningWorkshop key={skill.id+exerciseSerial} id={skill.id} round={stat.solved+(practiceCounts[skill.id]||0)} earned={earned} exploring={exploring} unlocks={newUnlocks} onComplete={finishWorkshop} onNext={()=>start(skill.id,exploring)}/>:<><section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
               <div className="function-area">
                 <div className="function-meta">
                   <span className="overline">Fonction à transformer</span>
@@ -923,35 +948,11 @@ function DeriveLab() {
                         </span>
                       }/>
                     </div>}
-                    <p className="input-help" id="math-input-help">Utilise le clavier maths juste en dessous. Touche la case pour placer le curseur.</p>
+                    <p className="input-help" id="math-input-help">Touche la case, puis utilise le clavier mathématique.</p>
                     {answer&&!quotient&&<div className="input-reading">Lecture : <MathText text={current.kind==="pair"?pairActive+"'(x) = "+answer:current.prefix+answer+current.suffix} compact={quotient||index===exercise.steps.length-1}/></div>}
                     {feedback&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
                     {hint&&<div className="hintbox"><MathText text={current.hint}/></div>}
-                    <section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
-                <div className="tooltitle">Clavier mathématique <span className="tag">Sous ta réponse</span></div>
-                <p className="toolsub">Compose ta réponse avec les touches ci-dessous.</p>
-                <div className="keys">
-                  {["7","8","9","+","−","4","5","6","×","÷","1","2","3","(",")","0",".","x","x²","xⁿ"].map(key=>
-                    <button key={key} disabled={!keyboardActive}
-                      aria-label={key==="÷"?"Insérer une fraction":undefined} className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
-                      onPointerDown={e=>e.preventDefault()}
-                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
-                  )}
-                </div>
-                <div className="keytools">
-                  <button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>insert("^2")}>a²</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={legacyNextHole}>Case suivante</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>{setAnswer(answer.startsWith("-")?answer.slice(1):"-"+answer);}}>+/−</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
-                  <button className="key" disabled={!keyboardActive} onClick={()=>{setAnswer("");inputRef.current?.focus({preventScroll:true});}}>Vider la case</button>
-                </div>
-                <button className="morekeys" aria-expanded={extraKeys} onClick={()=>setExtraKeys(!extraKeys)}>{extraKeys?"−":"+"} Fonctions & fractions</button>
-                {extraKeys&&<div className="extra">
-                  {["1/x","√","eˣ","ln","sin","cos"].map(key=>
-                    <button className="key" key={key} disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()}
-                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
-                  )}
-                </div>}
-                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={validateAnswer}>{current.kind==="pair"?"Valider "+pairActive+"′(x)":quotient?"Valider le numérateur":"Valider la réponse"} <span>↗</span></button>
-                <div className="keyboard-note">Sur ordinateur, le clavier physique fonctionne aussi.</div>
-              </section>
+
                   </div>}
 
                   {feedback&&current.kind!=="input"&&current.kind!=="assemble"&&!(current.kind==="pair"&&pairActive)&&<div role="status" className={"feedback"+(feedback.good?" good":"")}>{feedback.text.includes("/")?<MathText text={feedback.text}/>:feedback.text.replace(/[·*]/g," × ")}</div>}
@@ -974,7 +975,7 @@ function DeriveLab() {
                   {newUnlocks.length>0&&<div className="unlock-message">✧ Nouveaux ateliers débloqués : {newUnlocks.join(", ")}.</div>}
                 </div>}
               </div>
-            </section>}
+            </section><aside className="keyboard-dock">{legacyKeyboard}</aside></>}
           </div>
         </>}
 

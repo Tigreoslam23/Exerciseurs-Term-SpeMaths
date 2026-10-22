@@ -49,9 +49,12 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
   const nav=[...d.querySelectorAll('.skill-item>button:first-child')].find(b=>b.querySelector('strong')?.textContent===skill.title);await click(nav);
   const explore=[...d.querySelectorAll('button')].find(b=>b.textContent==='Explorer cet atelier librement');if(explore)await click(explore);
   const originalRandom=Math.random;Math.random=()=>.63;const plan=makeLearningPlan(skill.id,0);Math.random=originalRandom;
+  assert.equal(d.querySelectorAll('.keyboard-dock .math-keyboard').length,1,'Un seul clavier dans son bloc indépendant');
+  assert.equal(q('.learning-board .math-keyboard'),null,'Le clavier ne fait plus partie du calcul');
   for(const step of plan.steps){
-   if(step.kind==='notice'){await click(q('.notice-stage .primary'));continue;}
+   if(step.kind==='notice'){assert.ok(q('.function-area .header-context .notice-stage'),'Règle à côté de la fonction');assert.ok(q('.math-keyboard fieldset').disabled);await click(q('.notice-stage .primary'));continue;}
    if(step.kind==='identify'){
+    assert.ok(q('.function-area .header-context .identification-stage'),'Identification remontée dans l’en-tête');
     for(let i=0;i<step.items.length;i++){await click(q('[data-identify-source="'+i+'"]'));await click(q('[data-identify-target="'+i+'"]'));}
     await click(q('.identification-stage>.primary'));continue;
    }
@@ -60,6 +63,9 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
     await click(q('.validate-assembly'));continue;
    }
    const inputs=[...d.querySelectorAll('.math-entry input')];assert.equal(inputs.length,step.fields.length);
+   assert.ok(!q('.math-keyboard fieldset').disabled,'Clavier disponible pour chaque champ');
+   if(['product','quotient'].includes(skill.id)&&step.references&&step.fields.length===2){assert.equal(d.querySelectorAll('.derivative-reference').length,2);assert.ok([...d.querySelectorAll('.derivative-reference')].every(el=>el.querySelector('.math-prime')),'Les fonctions identifiées sont à dériver dans chaque colonne');}
+   if(skill.id==='sum'){assert.ok(q('.reference-equation'));assert.equal(q('.term-reference'),null,'Décomposition commune sans petites étiquettes répétées');}
    assert.ok(inputs.every(input=>input.readOnly&&input.inputMode==='none'));
    if(skill.id==='basics'){
     await click(q('[aria-label="Insérer une fraction"]'));assert.equal(inputs[0].value,'(□)/(□)');assert.equal(inputs[0].selectionStart,1);
