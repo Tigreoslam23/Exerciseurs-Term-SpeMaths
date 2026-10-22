@@ -1,9 +1,11 @@
 import * as React from "react";
 import {createRoot} from "react-dom/client";
 import {MathText,compactMath} from "./math-display";
+import {FIRST_SKILLS} from "./curriculum";
+import {LearningWorkshop} from "./learning-workshop";
 import {RuleAssembly,substitutedRule,type AssemblyPair} from "./rule-assembly";
 type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
-type StepKind = "move" | "pair" | "assemble" | "formula" | "input" | "rule";
+type StepKind = "move" | "pair" | "assemble" | "formula" | "input" | "rule" | "workshop";
 type PairRole = "u" | "v";
 type Pair = AssemblyPair;
 type FactorRole = "k" | PairRole;
@@ -13,7 +15,7 @@ type Exercise = { id: string; expression: string; domain: string; final: string;
 type Skill = { id: string; title: string; subtitle: string; level: number; deps: string[] };
 type Result = { solved: number; clean: number; history: boolean[] };
 type Progress = { version: number; xp: number; stats: Record<string, Result> };
-const SKILLS: Skill[] = [
+const LEGACY_SKILLS: Skill[] = [
   {
     "id": "constant",
     "title": "Les constantes",
@@ -235,6 +237,7 @@ const SKILLS: Skill[] = [
     ]
   }
 ];
+const SKILLS:Skill[]=[...FIRST_SKILLS,...LEGACY_SKILLS.filter(s=>s.level===2&&s.id!=="exp")];
 const MEMO: [string,string][] = [
   [
     "Constante",
@@ -294,21 +297,24 @@ const MEMO: [string,string][] = [
   ]
 ];
 const STORAGE_KEY = "derive-lab-progression-v1";
-const EMPTY: Progress = { version: 1, xp: 0, stats: {} };
+const EMPTY: Progress = { version: 2, xp: 0, stats: {} };
 function readProgress(): Progress {
   try {
-    const p = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (p?.version === 1 && Number.isFinite(p.xp) && p.stats && typeof p.stats === "object") {
-      const stats: Record<string, Result> = {};
-      for (const skill of SKILLS) {
-        const s = p.stats[skill.id];
-        if (!s || !Number.isInteger(s.solved) || !Number.isInteger(s.clean) || s.solved < 0 || s.clean < 0 || s.clean > s.solved) continue;
-        stats[skill.id] = {solved: s.solved, clean: s.clean, history: Array.isArray(s.history) ? s.history.filter(v => typeof v === "boolean").slice(-20) : []};
+    const p=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    if([1,2].includes(p?.version)&&Number.isFinite(p.xp)&&p.stats&&typeof p.stats==="object"){
+      const stats:Record<string,Result>={};
+      const valid=(s:any)=>s&&Number.isInteger(s.solved)&&Number.isInteger(s.clean)&&s.solved>=0&&s.clean>=0&&s.clean<=s.solved;
+      for(const skill of SKILLS){const q=p.stats[skill.id];if(valid(q))stats[skill.id]={solved:q.solved,clean:q.clean,history:Array.isArray(q.history)?q.history.filter(v=>typeof v==="boolean").slice(-20):[]};}
+      if(p.version===1){
+        for(const [destination,origins] of Object.entries({basics:["constant","linear"],coeff:["coeff","negative"],power:["power","square"]})){
+          const old=origins.map(id=>p.stats[id]).filter(valid);
+          if(old.length)stats[destination]={solved:old.reduce((n,q)=>n+q.solved,0),clean:old.reduce((n,q)=>n+q.clean,0),history:old.flatMap(q=>Array.isArray(q.history)?q.history.filter(v=>typeof v==="boolean"):[]).slice(-20)};
+        }
       }
-      return {version:1,xp:Math.max(0,p.xp),stats};
+      return {version:2,xp:Math.max(0,p.xp),stats};
     }
-  } catch {}
-  return { ...EMPTY, stats: {} };
+  }catch{}
+  return {...EMPTY,stats:{}};
 }
 
 function mathValue(source: string, x: number): number {
@@ -334,6 +340,7 @@ function equivalent(a: string, b: string): boolean {
 }
 
 function makeTask(id: string, first = false): Exercise {
+ if(FIRST_SKILLS.some(s=>s.id===id))return {id,expression:"",domain:"",final:"",steps:[{kind:"workshop",prompt:"",expected:"workshop",prefix:"",suffix:"",hint:"",choices:[],solved:""}]};
  const r=(lo=2,hi=7)=>Math.floor(Math.random()*(hi-lo+1))+lo;
  const a=first?4:r(),b=r(),c=r(),n=r(3,6),xp=k=>k===0?"1":k===1?"x":`x^${k}`;
  const poly=(cs)=>cs.map((v,k)=>[v,k]).reverse().filter(([v])=>v!==0).map(([v,k],i)=>(v<0?"-":i?"+":"")+(k===0?Math.abs(v):((Math.abs(v)===1?"":Math.abs(v)+"*")+xp(k)))).join("")||"0";
@@ -397,8 +404,12 @@ function makeTask(id: string, first = false): Exercise {
 
 function DeriveLab() {
   const [progress,setProgress]=React.useState<Progress>(readProgress);
-  const [exercise,setExercise]=React.useState<Exercise>(()=>makeTask("coeff",true));
+  const [exercise,setExercise]=React.useState<Exercise>(()=>makeTask("basics",true));
   const [index,setIndex]=React.useState(0);
+  const [exerciseSerial,setExerciseSerial]=React.useState(0);
+  const [practiceCounts,setPracticeCounts]=React.useState<Record<string,number>>({});
+  const [infoOpen,setInfoOpen]=React.useState(false);
+  const [textScale,setTextScale]=React.useState(()=>{try{const v=Number(localStorage.getItem("derive-lab-text-scale"));return [1,1.1,1.2].includes(v)?v:1;}catch{return 1;}});
   const [done,setDone]=React.useState(false);
   const [answer,setAnswer]=React.useState("");
   const [pairActive,setPairActive]=React.useState<PairRole|null>(null);
@@ -439,7 +450,7 @@ function DeriveLab() {
   const current=exercise.steps[index];
   const quotient=exercise.pair?.operation==="quotient";
   const stat=progress.stats[skill.id]||{solved:0,clean:0,history:[]};
-  const available=(s:Skill,p=progress)=>s.deps.every(id=>(p.stats[id]?.clean||0)>=3);
+  const available=(s:Skill,p=progress)=>(p.stats[s.id]?.solved||0)>0||s.deps.every(id=>(p.stats[id]?.clean||0)>=3);
   const mastered=(s:Skill)=>{
     const q=progress.stats[s.id];
     return !!q&&q.solved>=10&&q.clean/q.solved>=.8;
@@ -504,6 +515,7 @@ function DeriveLab() {
   }
 
   function start(id:string,sandbox=false){
+    setExerciseSerial(n=>n+1);setInfoOpen(false);
     const next=SKILLS.find(s=>s.id===id)!;
     setExercise(makeTask(id));setIndex(0);setDone(false);setAnswer("");setPicked(null);
     setIdentified({k:false,u:false,v:false});setPairActive(null);setPairDrafts({u:"",v:""});setPairValidated({u:false,v:false});cancelFactorDrag();
@@ -511,6 +523,14 @@ function DeriveLab() {
     setEarned(0);setNewUnlocks([]);
     setExploring(sandbox);setView("atelier");setDetail(null);setLevel(next.level);
     accepted.current=-1;
+  }
+
+  function finishWorkshop(final:string,dirty:boolean){
+    setExercise(e=>({...e,final}));setDone(true);setHadError(dirty);
+    if(exploring||!available(skill)){setPracticeCounts(p=>({...p,[skill.id]:(p[skill.id]||0)+1}));return;}
+    const reward=dirty?10:30,old=progress.stats[skill.id]||{solved:0,clean:0,history:[]};
+    const next={...progress,xp:progress.xp+reward,stats:{...progress.stats,[skill.id]:{solved:old.solved+1,clean:old.clean+(dirty?0:1),history:[...old.history,!dirty].slice(-20)}}};
+    setNewUnlocks(SKILLS.filter(s=>!available(s,progress)&&available(s,next)).map(s=>s.title));setProgress(next);setEarned(reward);
   }
 
   function chooseSkill(s:Skill){
@@ -594,7 +614,7 @@ function DeriveLab() {
                 readOnly inputMode="none" autoComplete="off" spellCheck={false}
                 onFocus={()=>activatePair(role)} onClick={()=>activatePair(role)} onKeyDown={handleAnswerKey}
                 onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}/>
-              {value&&<span className="answer-render" aria-hidden="true"><MathText text={value} compact/></span>}
+              {value&&<span className="answer-render" aria-hidden="true"><MathText text={value} compact slot={legacyHole}/></span>}
             </span>}
           </div>
         </div>;
@@ -691,12 +711,13 @@ function DeriveLab() {
   function insert(text:string,inside=false){
     if(!keyboardActive)return;
     const el=inputRef.current;
-    const from=el?.selectionStart??answer.length,to=el?.selectionEnd??from;
+    const from=el?.selectionStart??answer.length;let to=el?.selectionEnd??from;
+    if(answer[from]==="□"&&from===to)to++;
     text=text.slice(0,Math.max(0,180-answer.length+(to-from)));
     setFeedback(null);
     setAnswer(answer.slice(0,from)+text+answer.slice(to));
-    const caret=from+text.length-(inside?1:0);
-    setTimeout(()=>{el?.focus({preventScroll:true});el?.setSelectionRange(caret,caret);},0);
+    const hole=text.indexOf("□"),caret=hole>=0?from+hole:from+text.length-(inside?1:0);
+    setTimeout(()=>{el?.focus({preventScroll:true});el?.setSelectionRange(caret,caret+(hole>=0?1:0));},0);
   }
 
   function erase(){
@@ -721,16 +742,28 @@ function DeriveLab() {
     if(/^[0-9a-z()+\-*/^.,×−·]$/i.test(e.key)){e.preventDefault();insert(e.key.toLowerCase());}
   }
 
+  function legacyHole(number:number){
+    return <button className="fraction-hole" type="button" aria-label={"Case de fraction "+(number+1)} onPointerDown={e=>e.preventDefault()} onClick={()=>{let at=-1;for(let i=0;i<=number;i++)at=answer.indexOf("□",at+1);inputRef.current?.focus({preventScroll:true});inputRef.current?.setSelectionRange(at,at+1);}}>□</button>;
+  }
+  function legacyNextHole(){const start=inputRef.current?.selectionEnd??0;let at=answer.indexOf("□",start);if(at<0)at=answer.indexOf("□");if(at>=0){inputRef.current?.focus({preventScroll:true});inputRef.current?.setSelectionRange(at,at+1);}}
   function showHint(){setHint(true);setUsedHelp(true);}
   const keyMap:Record<string,[string,boolean?]>={
-    "×":["*"],"÷":["/"],"−":["-"],"x²":["x^2"],"xⁿ":["x^()",true],
-    "√":["sqrt()",true],"eˣ":["e^()",true],"ln":["ln()",true],
+    "×":["*"],"÷":["(□)/(□)"],"−":["-"],"x²":["x^2"],"xⁿ":["x^(□)"],
+    "√":["sqrt(□)"],"eˣ":["e^(□)"],"ln":["ln(□)"],
     "sin":["sin()",true],"cos":["cos()",true],"1/x":["1/()",true]
   };
   const keyboardActive=!done&&(current?.kind==="input"||(current?.kind==="pair"&&!!pairActive&&!pairValidated[pairActive]));
   const rate=stat.solved?Math.round(100*stat.clean/stat.solved):0;
 
-  return <div className={"derive"+(light?" light":"")}>
+  function skillInfo(){return <div className="panel skill-progress inline-skill-info">
+    <div className="tooltitle">Cette compétence <span className="tag">{mastered(skill)?"Maîtrisée ✓":"En construction"}</span></div>
+    <div className="progress-big"><strong>{Math.min(3,stat.clean)}</strong><span>/ 3 pour ouvrir la suite</span></div>
+    <div className="segments">{[0,1,2].map(i=><i key={i} className={stat.clean>i?"ok":""}/>)}</div>
+    <p className="smalltext">{stat.solved} exercices terminés · {rate} % sans aide.</p>
+    {stat.history.length>0&&<div className="history" aria-label="Historique des 20 derniers exercices">{stat.history.map((ok,i)=><span key={i} className={ok?"":"miss"} title={ok?"Sans erreur ni indice":"Avec erreur ou aide"}/>)}</div>}
+    <p className="smalltext">Maîtrise : au moins 10 exercices et 80 % de réussites sans aide.</p>
+  </div>;}
+  return <div className={"derive"+(light?" light":"")} style={{"--explanation-scale":textScale} as React.CSSProperties}>
     {dragPreview&&<div className={"factor-ghost "+(dragPreview.role==="k"?"coefficient":"reference")} aria-hidden="true"
       style={{left:Math.max(58,Math.min(window.innerWidth-58,dragPreview.x)),top:dragPreview.y}}>
       <MathText text={factorValue(dragPreview.role)}/>
@@ -747,6 +780,7 @@ function DeriveLab() {
         )}
       </nav>
       <div className="header-right">
+        <button className="text-scale" aria-label={"Taille des explications : "+Math.round(textScale*100)+" %. Augmenter"} onClick={()=>{const next=textScale===1?1.1:textScale===1.1?1.2:1;setTextScale(next);try{localStorage.setItem("derive-lab-text-scale",String(next));}catch{}}}>A <span>{Math.round(textScale*100)} %</span></button>
         <span className="xp">✧ {progress.xp} XP</span>
         {!installed&&<button className="install-button" onClick={installApp} disabled={installBusy} data-install-ready={!!installPrompt} aria-label="Installer l’application">↓ <span>{installBusy?"Installation…":"Installer"}</span></button>}
         <button className="iconbutton" onClick={()=>setLight(!light)}
@@ -756,7 +790,7 @@ function DeriveLab() {
 
     <div className="layout">
       <aside className="sidebar">
-        <div className="sidehead"><span className="overline">Les compétences</span><span className="smallcount">{unlockedCount} / 24</span></div>
+        <div className="sidehead"><span className="overline">Les compétences</span><span className="smallcount">{unlockedCount} / {SKILLS.length}</span></div>
         <div className="switch">
           <button className={level===1?"on":""} onClick={()=>setLevel(1)}>Première</button>
           <button className={level===2?"on":""} onClick={()=>setLevel(2)}>Terminale</button>
@@ -764,11 +798,12 @@ function DeriveLab() {
         <div className="skillnav">
           {SKILLS.filter(s=>s.level===level).map(s=>{
             const q=progress.stats[s.id],unlocked=available(s),master=mastered(s);
-            return <button key={s.id} onClick={()=>chooseSkill(s)}
+            return <div className="skill-item" key={s.id}><button onClick={()=>chooseSkill(s)}
               className={(s.id===skill.id?"selected ":"")+(!unlocked?"locked ":"")+(master?"completed":"")}>
               <span className="skillnum">{master?"✓":!unlocked?"◇":String(SKILLS.indexOf(s)+1).padStart(2,"0")}</span>
               <span><strong>{s.title}</strong><small>{master?"Maîtrisée":!unlocked?"À débloquer":Math.min(q?.clean||0,3)+" / 3 réussites"}</small></span>
-            </button>;
+            </button>{s.id===skill.id&&<button className="skill-info-button" aria-label="Informations sur cette compétence" aria-expanded={infoOpen} onClick={()=>setInfoOpen(!infoOpen)}>ⓘ</button>}
+            {s.id===skill.id&&infoOpen&&skillInfo()}</div>;
           })}
         </div>
         <div className="sidefoot">
@@ -777,7 +812,7 @@ function DeriveLab() {
           <button onClick={()=>setResetting(!resetting)}>Recommencer la progression</button>
           {resetting&&<div>Effacer les résultats de cet appareil ?
             <div style={{display:"flex",gap:15}}>
-              <button onClick={()=>{setProgress({...EMPTY,stats:{}});setResetting(false);start("coeff");}}>Oui, effacer</button>
+              <button onClick={()=>{setProgress({...EMPTY,stats:{}});setResetting(false);start("basics");}}>Oui, effacer</button>
               <button onClick={()=>setResetting(false)}>Annuler</button>
             </div>
           </div>}
@@ -797,11 +832,12 @@ function DeriveLab() {
               <h1>{skill.title}</h1>
               <p className="subtitle">{skill.subtitle.includes("/")?<MathText text={skill.subtitle}/>:skill.subtitle}. Une étape après l’autre.</p>
             </div>
-            <button className="softbtn" onClick={()=>start(skill.id,exploring)} title="Changer d’exemple"><span>↻</span> Nouvel exemple</button>
+            <div className="intro-tools"><button className="mobile-info-button softbtn" aria-label="Informations sur cette compétence" aria-expanded={infoOpen} onClick={()=>setInfoOpen(!infoOpen)}>ⓘ</button><button className="softbtn" onClick={()=>start(skill.id,exploring)} title="Changer d’exemple"><span>↻</span> Nouvel exemple</button></div>
           </div>
+          {infoOpen&&<div className="mobile-skill-info">{skillInfo()}</div>}
 
           <div className="studio">
-            <section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
+            {skill.level===1?<LearningWorkshop key={skill.id+exerciseSerial} id={skill.id} round={stat.solved+(practiceCounts[skill.id]||0)} earned={earned} exploring={exploring} unlocks={newUnlocks} onComplete={finishWorkshop} onNext={()=>start(skill.id,exploring)}/>:<section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
               <div className="function-area">
                 <div className="function-meta">
                   <span className="overline">Fonction à transformer</span>
@@ -883,7 +919,7 @@ function DeriveLab() {
                             readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
                             onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
                             onKeyDown={handleAnswerKey}/>
-                          {answer&&<span className="answer-render" aria-hidden="true"><MathText text={answer} compact={quotient||index===exercise.steps.length-1}/></span>}
+                          {answer&&<span className="answer-render" aria-hidden="true"><MathText text={answer} compact={quotient||index===exercise.steps.length-1} slot={legacyHole}/></span>}
                         </span>
                       }/>
                     </div>}
@@ -897,20 +933,20 @@ function DeriveLab() {
                 <div className="keys">
                   {["7","8","9","+","−","4","5","6","×","÷","1","2","3","(",")","0",".","x","x²","xⁿ"].map(key=>
                     <button key={key} disabled={!keyboardActive}
-                      className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
+                      aria-label={key==="÷"?"Insérer une fraction":undefined} className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
                       onPointerDown={e=>e.preventDefault()}
-                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||key}/></button>
+                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
                   )}
                 </div>
                 <div className="keytools">
-                  <button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
+                  <button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>insert("^2")}>a²</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={legacyNextHole}>Case suivante</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>{setAnswer(answer.startsWith("-")?answer.slice(1):"-"+answer);}}>+/−</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
                   <button className="key" disabled={!keyboardActive} onClick={()=>{setAnswer("");inputRef.current?.focus({preventScroll:true});}}>Vider la case</button>
                 </div>
                 <button className="morekeys" aria-expanded={extraKeys} onClick={()=>setExtraKeys(!extraKeys)}>{extraKeys?"−":"+"} Fonctions & fractions</button>
                 {extraKeys&&<div className="extra">
                   {["1/x","√","eˣ","ln","sin","cos"].map(key=>
                     <button className="key" key={key} disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()}
-                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||key}/></button>
+                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
                   )}
                 </div>}
                 <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={validateAnswer}>{current.kind==="pair"?"Valider "+pairActive+"′(x)":quotient?"Valider le numérateur":"Valider la réponse"} <span>↗</span></button>
@@ -938,33 +974,16 @@ function DeriveLab() {
                   {newUnlocks.length>0&&<div className="unlock-message">✧ Nouveaux ateliers débloqués : {newUnlocks.join(", ")}.</div>}
                 </div>}
               </div>
-            </section>
-
-            <aside className="right" aria-label="Outils et progression">
-              <div className="panel skill-progress">
-                <div className="tooltitle">Cette compétence <span className="tag">{mastered(skill)?"Maîtrisée ✓":"En construction"}</span></div>
-                <div className="progress-big"><strong>{Math.min(3,stat.clean)}</strong><span>/ 3 pour ouvrir la suite</span></div>
-                <div className="segments">{[0,1,2].map(i=><i key={i} className={stat.clean>i?"ok":""}/>)}</div>
-                <div className="smalltext">Réussites sans erreur ni indice.<br/>
-                  {stat.solved>0?stat.solved+" exercice"+(stat.solved>1?"s":"")+" terminé"+(stat.solved>1?"s":"")+" · "+rate+" % sans aide":
-                    "Ton historique commencera à la première fonction terminée."}
-                </div>
-                {stat.history.length>0&&<div className="history" aria-label="Historique des 20 derniers exercices">
-                  {stat.history.map((ok,i)=><span key={i} className={ok?"":"miss"} title={ok?"Réussi sans erreur ni indice":"Terminé avec erreur ou aide"}/>)}
-                </div>}
-                <p className="smalltext" style={{marginBottom:0}}>Maîtrise : au moins 10 exercices terminés et 80 % de réussites sans erreur ni indice.</p>
-              </div>
-              <div className="tipcard"><strong>Comprendre avant d’accélérer.</strong><p>Aucun chronomètre. Les points récompensent les fonctions terminées, et les indices restent toujours disponibles.</p></div>
-            </aside>
+            </section>}
           </div>
         </>}
 
         {view==="parcours"&&<>
-          <div className="eyebrow">24 compétences · Deux niveaux</div>
+          <div className="eyebrow">{SKILLS.length} compétences · Deux niveaux</div>
           <h1>Chaque règle ouvre une porte.</h1>
           <p className="subtitle">Choisis un atelier disponible, ou explore une compétence pour découvrir la suite.</p>
           <div className="overview">
-            <div><strong>{unlockedCount}<span> / 24</span></strong><span>ateliers accessibles</span></div>
+            <div><strong>{unlockedCount}<span> / {SKILLS.length}</span></strong><span>ateliers accessibles</span></div>
             <div><strong>{masteryCount}</strong><span>compétences maîtrisées</span></div>
             <div><strong>{totalSolved}</strong><span>fonctions terminées</span></div>
           </div>

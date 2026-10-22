@@ -5,6 +5,7 @@ export type DisplayNode =
   | {type:"group";children:DisplayNode[];closed:boolean}
   | {type:"power";base:DisplayNode;exponent:DisplayNode[]}
   | {type:"prime";base:DisplayNode;mark:string}
+  | {type:"root";children:DisplayNode[]}
   | {type:"fraction";numerator:DisplayNode[];denominator:DisplayNode[]};
 
 const factor=(node:DisplayNode|undefined)=>!!node&&node.type!=="space"&&node.type!=="operator";
@@ -15,7 +16,7 @@ const ungroup=(nodes:DisplayNode[])=>nodes.length===1&&nodes[0].type==="group"&&
 export function parseMathDisplay(source:string):DisplayNode[]{
   const superscripts:Record<string,string>={"⁰":"0","¹":"1","²":"2","³":"3","⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9","ⁿ":"n","ᵘ":"u","⁻":"-","⁺":"+"};
   const text=source.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹ⁿᵘ⁻⁺]+/g,s=>"^("+[...s].map(c=>superscripts[c]).join("")+")")
-    .replace(/sqrt/g,"√").replace(/[·*]/g," × ").replace(/-/g,"−");
+    .replace(/sqrt/g,"√").replace(/\+\s*-/g,"-").replace(/[·*]/g," × ").replace(/-/g,"−");
   let pos=0;
   function sequence(group=false):{nodes:DisplayNode[];closed:boolean}{
     const nodes:DisplayNode[]=[];
@@ -23,6 +24,12 @@ export function parseMathDisplay(source:string):DisplayNode[]{
     while(pos<text.length){
       const char=text[pos];
       if(group&&char===")"){pos++;closed=true;break;}
+      if(char==="√"){
+        pos++;let children:DisplayNode[];
+        if(text[pos]==="("){pos++;children=sequence(true).nodes;}
+        else {const part=text.slice(pos).match(/^\d+|^[a-z]|^□/i)?.[0]||"□";pos+=part==="□"&&text[pos]!=="□"?0:part.length;children=[{type:"atom",text:part}];}
+        nodes.push({type:"root",children});continue;
+      }
       if(char==="("){
         pos++;const inner=sequence(true);
         nodes.push({type:"group",children:inner.nodes,closed:inner.closed});continue;
@@ -80,6 +87,7 @@ export function parseMathDisplay(source:string):DisplayNode[]{
 
 const hasFraction=(nodes:DisplayNode[]):boolean=>nodes.some(node=>node.type==="fraction"||
   (node.type==="group"&&hasFraction(node.children))||
+  (node.type==="root"&&hasFraction(node.children))||
   (node.type==="power"&&(hasFraction([node.base])||hasFraction(node.exponent)))||
   (node.type==="prime"&&hasFraction([node.base])));
 
@@ -89,8 +97,9 @@ export function compactMath(source:string):string{
     .replace(/(□)\s*[*×·]\s*(?=[a-z(√])/gi,"$1");
 }
 
-export function MathText({text,slot,compact=false}:{text:string;slot?:React.ReactNode;compact?:boolean}){
+export function MathText({text,slot,compact=false}:{text:string;slot?:React.ReactNode|((index:number)=>React.ReactNode);compact?:boolean}){
   const display=compact?compactMath(text):text;
+  let slotIndex=0;
   function render(nodes:DisplayNode[]):React.ReactNode[]{
     if(compact){
       const hidden=new Set<number>();
@@ -108,6 +117,7 @@ export function MathText({text,slot,compact=false}:{text:string;slot?:React.Reac
       nodes=nodes.filter((_,i)=>!hidden.has(i));
     }
     return nodes.map((node,i)=>{
+      if(node.type==="root")return <span className="math-root" key={i}><span className="radical-sign">√</span><span className="radicand">{render(node.children)}</span></span>;
       if(node.type==="fraction")return <span className="math-frac" key={i}>
         <span className="math-numerator">{render(node.numerator)}</span>
         <span className="math-denominator">{render(node.denominator)}</span>
@@ -117,9 +127,10 @@ export function MathText({text,slot,compact=false}:{text:string;slot?:React.Reac
       </span>;
       if(node.type==="power")return <React.Fragment key={i}>{render([node.base])}<sup>{render(node.exponent)}</sup></React.Fragment>;
       if(node.type==="prime")return <span className="math-primed" key={i}>{render([node.base])}<sup className="math-prime">′</sup></span>;
-      if(node.type==="atom"&&node.text==="□"&&slot)return <React.Fragment key={i}>{slot}</React.Fragment>;
-      return <span key={i} className={node.type==="atom"&&/^[a-z]+$/i.test(node.text)&&/^[fxuvkndge]+$/.test(node.text)?"math-identifier":"math-literal"}>{node.text}</span>;
+      if(node.type==="atom"&&node.text==="□"&&slot)return <React.Fragment key={i}>{typeof slot==="function"?slot(slotIndex++):slot}</React.Fragment>;
+      return <span key={i} className={node.type==="atom"&&/^[a-z]+$/i.test(node.text)&&/^[abcfxuvkndge]+$/.test(node.text)?"math-identifier":"math-literal"}>{node.text}</span>;
     });
   }
   return <span className="math" role={slot?undefined:"math"} aria-label={slot?undefined:display}>{render(parseMathDisplay(text))}</span>;
 }
+

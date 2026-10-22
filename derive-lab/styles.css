@@ -351,3 +351,103 @@ body{margin:0;background:#0b0e17}
   .derive .compact-quotient .assembly-slot{min-width:38px;font-size:16px;padding:5px 3px}
 }
 
+/* Racine avec barre couvrant son radicande. */
+.derive .math-root{display:inline-flex;align-items:stretch;vertical-align:middle;white-space:nowrap;line-height:1.25;margin:0 .04em}
+.derive .radical-sign{font-family:"Derive Math",serif;font-style:normal;font-size:1.28em;line-height:1.05;align-self:center;margin-right:-.04em}
+.derive .radicand{border-top:.065em solid currentColor;padding:.035em .1em 0 .055em;display:inline-flex;align-items:center}
+
+/* Toute la largeur disponible sert au calcul et à son clavier. */
+.derive .studio{display:block}
+.derive .skill-item{position:relative}
+.derive .skill-item>button:first-child{width:100%;padding-right:30px}
+.derive .skill-info-button{position:absolute;right:6px;top:16px;color:var(--purple);font-size:18px;width:25px;height:30px}
+.derive .inline-skill-info{margin:5px 0 12px;padding:13px;border-radius:12px}
+.derive .inline-skill-info .tooltitle{font-size:11px;display:block}
+.derive .inline-skill-info .tag{display:block;font-size:8px;margin-top:5px}
+.derive .inline-skill-info .progress-big{margin:10px 0;font-size:11px}
+.derive .inline-skill-info .progress-big strong{font-size:27px}
+.derive .inline-skill-info .smalltext{font-size:calc(10px * var(--explanation-scale,1))}
+.derive .text-scale{display:flex;align-items:center;gap:5px;min-height:35px;border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:17px;color:var(--purple);white-space:nowrap}
+.derive .text-scale span{font-size:10px}
+.derive .intro-tools{display:flex;gap:7px;align-items:center}
+.derive .mobile-info-button,.derive .mobile-skill-info{display:none}
+.derive .learning-board{overflow:visible}
+.derive .learning-board .function-area{border-radius:18px 18px 0 0}
+.derive .learning-board .original{white-space:normal;overflow:visible;overflow-wrap:anywhere;margin:14px 0 7px;line-height:1.8;padding:7px 0}
+.derive .learning-board .original>.math{white-space:normal}
+.derive .learning-board .domain{max-width:70%;font-size:calc(11px * var(--explanation-scale,1));white-space:normal;text-align:right}
+.derive .difficulty{color:var(--muted);font-size:calc(11px * var(--explanation-scale,1));margin:0}
+.derive .learning-steps{padding:22px 27px 27px;min-width:0}
+.derive .learning-steps .step-title{font-size:15px;margin-top:10px}
+.derive .learning-steps p,.derive .learning-steps .entry-help{font-size:calc(13px * var(--explanation-scale,1));line-height:1.65;color:var(--muted)}
+.derive .rule-banner{border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:18px;font-size:26px;overflow-x:auto;margin:13px 0}
+.derive .notice-stage>.primary,.derive .identification-stage>.primary{font-size:12px;width:auto;padding:11px 17px;gap:15px;margin-top:10px}
+.derive .previous-work{font-size:calc(11px * var(--explanation-scale,1));color:var(--muted);margin:12px 0}
+.derive .previous-work summary{cursor:pointer;color:var(--purple);padding:5px 0}
+.derive .previous-work>.math{display:block;overflow-x:auto;font-size:22px;padding:10px 3px}
+.derive .identify-sources,.derive .identify-destinations{display:flex;gap:13px;margin:16px 0;align-items:stretch;flex-wrap:wrap}
+.derive .identify-source,.derive .identify-destinations>button{min-width:100px;min-height:65px;padding:10px 16px;border-radius:12px;background:var(--bg);font-size:25px;display:flex;align-items:center;justify-content:center;gap:8px;flex:1}
+.derive .identify-source{border:1px solid var(--purple);color:var(--purple);touch-action:none;user-select:none;cursor:grab}
+.derive .identify-source.selected{box-shadow:0 0 0 3px rgba(184,164,255,.2)}
+.derive .identify-source:disabled{opacity:1;color:var(--muted);border-color:var(--line)}
+.derive .identify-destinations>button{border:1.5px dashed var(--purple);color:var(--purple);flex-direction:column}
+.derive .identify-destinations>button.filled:disabled{opacity:1;border:1px solid var(--green);color:var(--green)}
+.derive .identify-destinations small{font:11px system-ui;color:var(--muted)}
+.derive .identify-status{font-size:calc(12px * var(--explanation-scale,1));color:var(--muted);min-height:23px}
+.derive .rewrite{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:25px;padding:10px 0}
+.derive .rewrite>span:first-child{font:calc(12px * var(--explanation-scale,1)) system-ui;color:var(--muted)}
+.derive .response-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:25px;align-items:start;margin-top:20px}
+.derive .response-content{min-width:0;padding:4px}
+.derive .math-keyboard{position:sticky;top:15px;padding:16px;background:var(--bg)}
+.derive .math-keyboard .keys{gap:6px;margin:14px 0 8px}
+.derive .math-keyboard .key{height:43px;padding:5px;font-size:20px}
+.derive .math-keyboard .keytools{display:grid;grid-template-columns:1fr 1fr 1.8fr;gap:6px}
+.derive .math-keyboard .quick-functions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}
+.derive .math-keyboard .keytools .key{font-family:system-ui;font-size:12px}
+.derive .math-keyboard .validate-key{font-size:13px;padding:11px 16px;margin-top:8px}
+.derive .math-keyboard .entry-help{font-size:calc(10px * var(--explanation-scale,1));margin-bottom:0}
+.derive .single-response,.derive .fraction-response{font-size:29px;display:flex;align-items:center;gap:12px;min-width:0;max-width:100%;padding:12px 7px;overflow-x:auto;overflow-y:visible;line-height:1.8}
+.derive .single-response>.math{white-space:normal;display:inline-block;line-height:2.2}
+.derive .math-entry{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:100px;min-height:58px;max-width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);vertical-align:middle;margin:.1em .19em;padding:9px 12px;font-size:24px;line-height:1.6}
+.derive .math-entry.active{border-color:var(--purple);box-shadow:0 0 0 3px rgba(184,164,255,.22)}
+.derive .math-entry>input{position:absolute;inset:0;width:100%;height:100%;border:0;outline:none;background:transparent;color:transparent;caret-color:var(--purple);font:inherit;border-radius:inherit;padding:9px 12px}
+.derive .math-entry-render{position:relative;pointer-events:none;display:inline-block;min-width:50px;max-width:100%;overflow-x:auto;overflow-y:visible;white-space:nowrap;padding:3px}
+.derive .math-entry-render .math{line-height:1.65}
+.derive .fraction-hole{pointer-events:auto;border:1px dashed var(--purple);padding:2px 5px;color:var(--purple);font-size:18px;min-width:30px;min-height:32px;border-radius:5px}
+.derive .editable-fraction{font-size:1em;max-width:100%}
+.derive .editable-fraction .math-numerator,.derive .editable-fraction .math-denominator{padding:8px 5px}
+.derive .parallel-response{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.derive .parallel-response>label{display:flex;flex-direction:column;gap:12px;color:var(--muted);font-size:14px;min-width:0}
+.derive .sum-rule-reference{font-size:26px;margin:0 0 15px}
+.derive .sum-response{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px}
+.derive .term-reference{font-size:20px;min-height:42px;margin-bottom:10px;overflow-x:auto;padding:3px 0}
+.derive .signed-answer{display:flex;align-items:center;gap:6px;min-width:0}
+.derive .signed-answer .math-entry{min-width:75px;margin:0;flex:1;font-size:21px;padding:7px}
+.derive .sign-switch{font-size:25px;border:1px solid var(--purple);color:var(--purple);min-width:34px;height:42px;border-radius:8px;background:var(--bg)}
+.derive .reference-strip{display:flex;gap:12px;flex-wrap:wrap;font-size:22px;margin-bottom:12px;color:var(--muted)}
+.derive .learning-steps .feedback{font-size:calc(12px * var(--explanation-scale,1));padding:12px;line-height:1.6}
+.derive .result{overflow-x:auto;padding:10px 5px}
+.derive .instruction,.derive .input-help,.derive .function-note,.derive .subtitle,.derive .hintbox{font-size:calc(12px * var(--explanation-scale,1))}
+/* Espacement et contours des anciennes zones de saisie. */
+.derive .math-completion .working{padding:10px 8px;line-height:2;overflow:visible}
+.derive .answer-shell{margin:4px .2em}
+.derive .math-group{gap:.07em}
+.derive .answer:focus{outline-offset:1px}
+@media(min-width:701px){.derive .math-completion{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:10px 23px;align-items:start}.derive .math-completion>*{grid-column:1}.derive .math-completion>.inline-keyboard{grid-column:2;grid-row:1 / span 8;position:sticky;top:15px;margin-top:0}}
+@media(max-width:1100px) and (min-width:901px){.derive .response-layout{grid-template-columns:minmax(0,1fr) 245px;gap:16px}.derive .math-entry{font-size:21px;min-width:85px}.derive .math-keyboard{padding:12px}}
+@media(max-width:900px){.derive .mobile-info-button{display:block}.derive .mobile-skill-info{display:block;margin-bottom:15px}.derive .response-layout{gap:18px}.derive .learning-steps{padding:20px}}
+@media(max-width:700px){
+ .derive .response-layout{grid-template-columns:1fr;gap:16px}.derive .math-keyboard{position:static;width:100%}
+ .derive .learning-steps{padding:18px 14px}.derive .learning-board .function-area{padding:18px}
+ .derive .learning-board .original{font-size:29px}.derive .learning-board .domain{font-size:calc(9px * var(--explanation-scale,1))}
+ .derive .learning-steps .step-title{font-size:13px}.derive .rule-banner{font-size:23px;padding:15px}
+ .derive .math-entry{font-size:23px;min-height:54px;min-width:85px;padding:7px 9px}
+ .derive .single-response,.derive .fraction-response{font-size:25px;padding:10px 4px}
+ .derive .sum-response{gap:20px 10px}.derive .term-reference{font-size:18px}.derive .signed-answer{gap:4px}
+ .derive .signed-answer .math-entry{font-size:19px;min-width:60px;padding:5px}.derive .sign-switch{min-width:28px;font-size:23px}
+ .derive .text-scale{padding:3px 6px;font-size:15px;gap:4px}.derive .text-scale span{font-size:9px}
+ .derive .intro-tools{gap:4px}.derive .intro-tools .softbtn{padding:8px;font-size:10px}
+ .derive .identify-source,.derive .identify-destinations>button{font-size:23px;padding:9px;min-height:62px}
+ .derive .math-keyboard .keys .key{font-size:22px;height:45px}.derive .result>.math{font-size:32px}
+}
+

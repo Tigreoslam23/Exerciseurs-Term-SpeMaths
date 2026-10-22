@@ -1,7 +1,7 @@
 /* Cache limité à Dérive Lab, sans toucher aux autres applications du domaine. */
-const CACHE_NAME = "derive-lab-c8b942d6a99281ef";
+const CACHE_NAME = "derive-lab-a47e05f0cc28dd50";
 const CACHE_PREFIX = "derive-lab-";
-const FILES = ["./", "./index.html", "./app.js?v=f67c934f4adf", "./styles.css?v=5be3114ff9c0", "./math-fonts.css?v=0f43c492102c", "./bootstrap.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable.png", "./apple-touch-icon.png"];
+const FILES = ["./", "./index.html", "./app.js?v=fc26b141cd9e", "./styles.css?v=870ec0ce3a5f", "./math-fonts.css?v=0f43c492102c", "./bootstrap.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable.png", "./apple-touch-icon.png"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(FILES.map(url => new Request(url, {cache:"reload"})))).then(() => self.skipWaiting()));
 });
