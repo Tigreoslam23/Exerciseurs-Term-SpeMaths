@@ -1,6 +1,6 @@
 import * as React from "react";
 import {createRoot} from "react-dom/client";
-import {MathText} from "./math-display";
+import {MathText,compactMath} from "./math-display";
 import {RuleAssembly,substitutedRule,type AssemblyPair} from "./rule-assembly";
 type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 type StepKind = "move" | "pair" | "assemble" | "formula" | "input" | "rule";
@@ -367,7 +367,7 @@ function makeTask(id: string, first = false): Exercise {
  if(id==="inverse")t={expression:`${a}/x`,domain:"pour x ≠ 0",final:`-${a}/x^2`,coefficient:String(a),base:"1/x",steps:[move(a,"1/x"),derivative("-1/x^2","(1/x)' = -1/x².",`f'(x) = ${a}*`,""),input(String(-a),"f'(x) = ","/x^2","Le signe moins vient de la dérivée de 1/x.")]};
  if(id==="sqrt"){const reduced=reducedSqrt(a,"(x)");t={expression:`${a}*sqrt(x)`,domain:"pour x > 0",final:reduced.final,coefficient:String(a),base:"sqrt(x)",steps:[move(a,"sqrt(x)"),derivative("1/(2sqrt(x))","(√x)' = 1/(2√x).",`f'(x) = ${a}*`,""),input(reduced.numerator,"f'(x) = ",reduced.suffix,reduced.hint)]};}
  if(id==="product"){const u=`x^2+${b}`,v=`${a}*x+${c}`,final=poly([a*b,2*c,3*a]);t={expression:`(${u})*(${v})`,domain:"sur ℝ",final,pair:{operation:"product",u,v,du:"2*x",dv:String(a)},steps:[identifyPair("product"),step("input","Applique la règle du produit.",`2*x*(${v})+(${u})*${a}`,"f'(x) = ","","Remplace u, v, u′ et v′ dans u′v + uv′."),input(final,"f'(x) = ","","Développe les deux produits, puis regroupe les termes de même degré.")]};}
- if(id==="quotient"){const v=`x+${c}`,u=poly([b,a]),k=a*c-b;t={expression:`(${u})/(${v})`,domain:`pour x ≠ -${c}`,final:`${k}/(${v})^2`,pair:{operation:"quotient",u,v,du:String(a),dv:"1"},steps:[identifyPair("quotient"),step("input","Complète le numérateur de la dérivée.",`${a}*(${v})-(${u})*1`,"f'(x) = (",`)/(${v})^2`,"Au numérateur, écris u′v − uv′ dans cet ordre."),input(String(k),"f'(x) = ",`/(${v})^2`,`Simplifie ${a}(${v})−(${u}). Les termes en x s'annulent.`)]};}
+ if(id==="quotient"){const v=`x+${c}`,u=poly([b,a]),k=a*c-b;t={expression:`(${u})/(${v})`,domain:`pour x ≠ -${c}`,final:`${k}/(${v})^2`,pair:{operation:"quotient",u,v,du:String(a),dv:"1"},steps:[identifyPair("quotient"),step("input","Complète le numérateur de la dérivée.",`${a}*(${v})-(${u})*1`,"f'(x) = (",`)/(${v})^2`,"Au numérateur, écris u′v − uv′ dans cet ordre."),input(String(k),"f'(x) = ",`/(${v})^2`,`Simplifie ${a}(${compactMath(v)})−(${compactMath(u)}). Les termes en x s'annulent.`)]};}
  if(id==="exp")t={expression:`${a}*e^x`,domain:"sur ℝ",final:`${a}*e^x`,coefficient:String(a),base:"e^x",steps:[move(a,"e^x"),derivative("e^x","La fonction exponentielle est sa propre dérivée.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","*e^x","Le coefficient est conservé.")]};
  if(id==="ln")t={expression:`${a}*ln(x)`,domain:"pour x > 0",final:`${a}/x`,coefficient:String(a),base:"ln(x)",steps:[move(a,"ln(x)"),derivative("1/x","(ln x)' = 1/x.",`f'(x) = ${a}*`,""),input(String(a),"f'(x) = ","/x","Conserve le coefficient au numérateur.")]};
  const u=`(${a}*x+${b})`,chain=()=>[rule("u'×g'(u)","Dérive la fonction extérieure, puis multiplie par u'."),derivative(String(a),"u est affine : u' = a.","u'(x) = ","")];
@@ -1013,4 +1013,5 @@ function DeriveLab() {
 const rootElement=document.getElementById("root");
 if(!rootElement)throw new Error("Élément de montage introuvable.");
 createRoot(rootElement).render(<DeriveLab/>);
+
 

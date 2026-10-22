@@ -1,5 +1,5 @@
 import * as React from "react";
-import {MathText} from "./math-display";
+import {MathText,compactMath} from "./math-display";
 
 export type AssemblyPair={operation:"product"|"quotient";u:string;v:string;du:string;dv:string};
 type Role="u"|"du"|"v"|"dv";
@@ -15,8 +15,11 @@ const targets:Target[]=[
 
 // La formule appliquée conserve les groupements jusqu'à sa simplification.
 export function substitutedRule(pair:AssemblyPair):string{
-  const first=`(${pair.du})*(${pair.v})`,second=`(${pair.u})*(${pair.dv})`;
-  return pair.operation==="quotient"?`(${first}-${second})/(${pair.v})^2`:`${first}+${second}`;
+  const {u,v,du,dv}=Object.fromEntries(
+    (["u","v","du","dv"] as const).map(role=>[role,compactMath(pair[role])])
+  );
+  const first=`(${du})*(${v})`,second=`(${u})*(${dv})`;
+  return pair.operation==="quotient"?`(${first}-${second})/(${v})^2`:`${first}+${second}`;
 }
 
 export function RuleAssembly({pair,onComplete,onError}:{pair:AssemblyPair;onComplete:()=>void;onError:()=>void}){
@@ -131,3 +134,4 @@ export function RuleAssembly({pair,onComplete,onError}:{pair:AssemblyPair;onComp
     {ghost&&<div className="factor-ghost reference" aria-hidden="true" style={{left:Math.max(60,Math.min(window.innerWidth-60,ghost.x)),top:ghost.y}}><MathText text={pair[ghost.role]} compact/></div>}
   </div>;
 }
+
