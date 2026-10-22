@@ -12,7 +12,7 @@ export const FIRST_SKILLS:Skill[]=[
  {id:"product",title:"La règle du produit",subtitle:"Identifier, assembler et simplifier",level:1,deps:["sum"]},
  {id:"quotient",title:"La règle du quotient",subtitle:"Des homographies aux fractions rationnelles",level:1,deps:["product","inverse"]},
  {id:"inverse-u",title:"L’inverse d’une fonction u",subtitle:"Construire −u′/u² sans développer u²",level:1,deps:["quotient","sum"]},
- {id:"affine-compose",title:"La composée affine",subtitle:"Dériver f(ax+b) en conservant ax+b",level:1,deps:["inverse-u","power","sqrt","exp"]}
+ {id:"affine-compose",title:"La composée affine",subtitle:"Dériver g(ax+b) en conservant ax+b",level:1,deps:["inverse-u","power","sqrt","exp"]}
 ];
 export type Term={expression:string;derivative:string};
 export type Field={label:string;expected:string;form?:"expanded"|"preserve-square"|"reduced-poly"};
@@ -127,10 +127,16 @@ export function makeLearningPlan(id:string,round=0):LearningPlan{
  }
  if(id==="affine-compose"){
   const a=nz(7),b=nz(7),u=poly([b,a]),kind=["power","inverse","exp","sqrt"][round%4],n=r(2,10);
+  const g=reference(kind,1,n);
   expression=kind==="power"?`(${u})^${n}`:kind==="inverse"?`1/(${u})`:kind==="exp"?`e^(${u})`:`sqrt(${u})`;
   final=kind==="power"?`${n*a}*(${u})^${n-1}`:kind==="inverse"?`${-a}/(${u})^2`:kind==="exp"?`${a}*e^(${u})`:a%2===0?`${a/2}/sqrt(${u})`:`${a}/(2sqrt(${u}))`;
   domain=kind==="inverse"?`pour ${u} ≠ 0`:kind==="sqrt"?`pour ${u} > 0`:"sur ℝ";
-  steps=[notice("Une composée affine.","(f(ax+b))' = a*f'(ax+b)","Dérive la fonction extérieure, conserve ax+b, puis multiplie par a."),fill("Calcule la dérivée intérieure.",String(a),"La dérivée de ax+b est a.","(ax+b)' = "),fill("Complète la dérivée composée.",final,"Conserve l’expression intérieure. Pour l’exponentielle : (eᵘ)′ = u′eᵘ. Pour la racine, réduis le coefficient de la fraction.")];
+  steps=[
+   {...identify([{label:"a",value:String(a)},{label:"g(x)",value:g.expression}],"(g(ax+b))' = a*g'(ax+b)","g(ax+b)"),title:"Identifie a et la fonction g."},
+   {kind:"fill",title:"Calcule la dérivée intérieure.",fields:[{label:"Coefficient a",expected:String(a)}],before:`a = (${u})' = `,hint:"La dérivée de ax+b est a. Repère le coefficient de x dans l’expression intérieure."},
+   {kind:"fill",title:"Dérive la fonction de référence g.",fields:[{label:"g′(x)",expected:g.derivative}],before:"g'(x) = ",hint:"Dérive g(x) uniquement, avec la variable x. Tu remplaceras ensuite x par l’expression intérieure."},
+   fill("Applique la règle et simplifie.",final,`Dans g′, remplace x par (${u}), puis multiplie par a = ${a}. Réduis le coefficient de la fraction si nécessaire.`)
+  ];
  }
  if(!steps.length)throw Error("Compétence inconnue : "+id);
  return {id,expression,domain,final,steps,difficulty};

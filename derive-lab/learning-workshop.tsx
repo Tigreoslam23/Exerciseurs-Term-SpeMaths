@@ -55,7 +55,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
    if(!sameMath(value,field.expected)){flagError();setFeedback("Le bloc « "+field.label+" » est à revoir. "+stage.hint);setActive(i);entries.current[i]?.focus();return;}
   }
   let result=stage.layout==="sum"?joinTerms(stage.fields.map((_,i)=>signs[i]===-1?"-"+answers[i]:answers[i])):stage.layout==="fraction"?`(${answers[0]})/(${answers[1]})`:stage.after?.startsWith("/")?`(${answers[0]})${stage.after}`:answers[0];
-  advance(stage.fields.length>1&&!stage.layout?stage.fields.map((field,i)=>field.label.replace(/′/g,"'")+" = "+answers[i]).join(" ; "):stage.before==="u'(x) = "?stage.before+result:"f'(x) = "+result);
+  advance(stage.fields.length>1&&!stage.layout?stage.fields.map((field,i)=>field.label.replace(/′/g,"'")+" = "+answers[i]).join(" ; "):(stage.before||"f'(x) = ")+result+(stage.after&&!stage.after.startsWith("/")?stage.after:""));
  }
  React.useEffect(()=>{if(stage.kind==="fill")entries.current[0]?.focus();},[phase]);
  const ready=stage.kind==="fill"&&stage.fields.every((_,i)=>answers[i]?.trim()&&!answers[i].includes("□"));

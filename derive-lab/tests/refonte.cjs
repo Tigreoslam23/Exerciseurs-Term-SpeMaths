@@ -11,11 +11,13 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
  await build({entryPoints:[path.join(root,'math-engine.ts')],outfile:path.join(out,'math.cjs'),bundle:true,platform:'node',format:'cjs'});
  const {makeLearningPlan,FIRST_SKILLS}=require(path.join(out,'plans.cjs')),{mathValue,sameMath}=require(path.join(out,'math.cjs'));
  assert.equal(FIRST_SKILLS.length,13);let functions=0;
+ const systemRandom=Math.random;let seed=130022;
+ Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  for(const skill of FIRST_SKILLS)for(let round=0;round<40;round++){
   const plan=makeLearningPlan(skill.id,round);let checked=0;
   for(const x of [-30,-20,-15,-10.13,-8.17,-2.43,-1.13,.29,.71,1.13,1.79,2.43,4.61,8.17,10.13,15,20,30]){
    try{
-    const h=1e-5,actual=(mathValue(plan.expression,x+h)-mathValue(plan.expression,x-h))/(2*h),expected=mathValue(plan.final,x);
+    const h=1e-6,actual=(mathValue(plan.expression,x+h)-mathValue(plan.expression,x-h))/(2*h),expected=mathValue(plan.final,x);
     assert.ok(Math.abs(actual-expected)<=2e-4*Math.max(1,Math.abs(expected)),skill.id+' '+plan.expression+' : '+plan.final);
     checked++;
    }catch(error){if(error.code==='ERR_ASSERTION')throw error;}
@@ -24,8 +26,26 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
   if(skill.id==='quotient')assert.ok(!sameMath(plan.final,'0'),'Quotient non constant');
   if(skill.id==='power'&&round<9)assert.equal(plan.expression,'x^'+(round+2));
   if(skill.id==='inverse'&&round===0)assert.equal(plan.expression,'2/x');
+  if(skill.id==='affine-compose'){
+   assert.equal(plan.steps[0].kind,'identify');
+   assert.deepEqual(plan.steps[0].items.map(item=>item.label),['a','g(x)']);
+   assert.equal(plan.steps[0].formula,"(g(ax+b))' = a*g'(ax+b)");
+   const g=plan.steps[0].items[1].value,dg=plan.steps[2];
+   assert.equal(dg.before,"g'(x) = ");
+   for(const x of [.29,1.13,2.43]){
+    const h=1e-5,actual=(mathValue(g,x+h)-mathValue(g,x-h))/(2*h),expected=mathValue(dg.fields[0].expected,x);
+    assert.ok(Math.abs(actual-expected)<=2e-4*Math.max(1,Math.abs(expected)),'Dérivée de g : '+g);
+   }
+  }
   functions++;
  }
+ const draws=[.1,0,.1,.75,.6];Math.random=()=>draws.shift()??.5;
+ const negativeComposition=makeLearningPlan('affine-compose',0);Math.random=systemRandom;
+ assert.equal(negativeComposition.expression,'(-x-6)^7');
+ assert.equal(negativeComposition.steps[1].before,"a = (-x-6)' = ");
+ assert.equal(negativeComposition.steps[1].fields[0].expected,'-1');
+ assert.equal(negativeComposition.steps[2].fields[0].expected,'7*x^6');
+ assert.ok(sameMath(negativeComposition.final,'-7*(-x-6)^6'));
  let source=fs.readFileSync(path.join(root,'app.tsx'),'utf8').split('const rootElement=document.getElementById("root");')[0];
  await build({stdin:{contents:source+'\nexport {readProgress,SKILLS};',resolveDir:root,loader:'tsx'},outfile:path.join(out,'progress.cjs'),bundle:true,platform:'node',format:'cjs'});
  const {readProgress,SKILLS}=require(path.join(out,'progress.cjs'));
@@ -90,6 +110,8 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
    assert.ok(!q('.math-keyboard .validate-key').disabled,'Réponse complète : '+skill.id);
    await click(q('.math-keyboard .validate-key'));
    assert.equal(q('.learning-steps .feedback'),null,'Validation : '+skill.id+' '+step.title+' '+q('.feedback')?.textContent);
+   if(skill.id==='affine-compose'&&step.fields[0].label==='Coefficient a')assert.ok(q('.previous-work [role="math"]').getAttribute('aria-label').startsWith('a = '),'Le coefficient a n’est pas présenté comme f′');
+   if(skill.id==='affine-compose'&&step.fields[0].label==='g′(x)')assert.ok(q('.previous-work [role="math"]').getAttribute('aria-label').startsWith("g'(x) = "),'La dérivée de référence reste notée g′');
   }
   assert.ok(q('.learning-board .success'),'Parcours terminé : '+skill.id);
   assert.ok(q('.learning-board .result [role="math"]'));
