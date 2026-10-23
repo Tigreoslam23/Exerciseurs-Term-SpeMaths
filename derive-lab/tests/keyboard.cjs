@@ -40,6 +40,8 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,25));
  {
   const {dom,d,q,click,button,key,skill}=await setup({...allStats,basics:{solved:3,clean:3,history:[true,true,true]},coeff:{solved:3,clean:3,history:[true,true,true]},'sum-pair':{solved:3,clean:3,history:[true,true,true]},sum:{solved:3,clean:3,history:[true,true,true]}});
   await click(q('.notice-stage .primary'));
+  assert.equal(button('Ajouter un exposant').textContent,'a□','Un seul carré, placé en exposant');
+  assert.equal(button('Insérer une exponentielle').textContent,'e□','Un seul carré pour l’exposant de e');
   assert.equal(d.querySelectorAll('.reference-key').length,6);
   await click(q('.more-shortcuts'));assert.equal(d.querySelectorAll('.reference-key').length,8);
   await click(q('.more-shortcuts'));assert.equal(d.querySelectorAll('.reference-key').length,6);

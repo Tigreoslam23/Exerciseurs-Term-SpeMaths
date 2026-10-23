@@ -38,7 +38,7 @@ export function parseMathDisplay(source:string):DisplayNode[]{
         pos++;let exponent:DisplayNode[]=[];
         if(text[pos]==="("){pos++;exponent=sequence(true).nodes;}
         else{
-          const match=text.slice(pos).match(/^[−+]?\d+(?:\.\d+)?|^[−+]?[a-z]/i);
+          const match=text.slice(pos).match(/^[−+]?\d+(?:\.\d+)?|^[−+]?[a-z]|^□/i);
           if(match){exponent=[{type:"atom",text:match[0]}];pos+=match[0].length;}
           else exponent=[{type:"atom",text:"□"}];
         }
