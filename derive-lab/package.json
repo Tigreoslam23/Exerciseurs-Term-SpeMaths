@@ -8,7 +8,7 @@
     "dev": "node serve.mjs",
     "typecheck": "tsc --noEmit",
     "build": "node build.mjs",
-    "test": "npm run build && node tests/refonte.cjs"
+    "test": "npm run build && node tests/refonte.cjs && node tests/keyboard.cjs"
   },
   "devDependencies": {
     "@types/react": "18.3.12",

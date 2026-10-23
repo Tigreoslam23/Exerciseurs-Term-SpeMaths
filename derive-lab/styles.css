@@ -510,3 +510,26 @@ body{margin:0;background:#0b0e17}
 /* La règle de composition se coupe uniquement avant le signe égal. */
 .derive .affine-rule-equation{display:flex;flex-wrap:wrap;gap:.15em .25em;align-items:baseline}
 .derive .affine-rule-equation>.math{white-space:nowrap;display:inline-block}
+
+/* Raccourcis gagnés et touches de construction communes aux deux niveaux. */
+.derive .math-keyboard .shortcut-bank{margin:12px 0 10px;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--bg)}
+.derive .shortcut-bank-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0;font-size:11px;font-weight:650;color:var(--green)}
+.derive .shortcut-bank-toggle small{display:inline-grid;place-items:center;min-width:19px;margin-left:5px;padding:1px 4px;border-radius:5px;background:var(--panel2);font-size:10px;color:var(--muted)}
+.derive .shortcut-bank .shortcut-empty,.derive .shortcut-bank .shortcut-reward{font-size:calc(10px * var(--explanation-scale,1));line-height:1.55;margin:8px 0 0;color:var(--muted)}
+.derive .shortcut-bank .shortcut-reward{color:var(--green)}
+.derive .shortcut-keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:9px}
+.derive .math-keyboard .reference-key{display:flex;justify-content:center;align-items:center;min-width:0;height:56px;padding:3px;font-size:20px;color:var(--green);border-color:var(--line)}
+.derive .reference-key .math-frac{font-size:.76em;line-height:1.05}
+.derive .shortcut-bank .more-shortcuts{display:block;padding:6px 0 0;font-size:10px;color:var(--purple)}
+.derive .math-keyboard .keyboard-actions{grid-template-columns:1fr 1fr 1.15fr;gap:6px}
+.derive .math-keyboard .keyboard-action{position:relative;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 3px;font-size:10px;overflow:visible}
+.derive .keyboard-action svg{flex-shrink:0;width:19px;height:19px}
+.derive .keyboard-action .action-label{font-size:10px}
+.derive .math-keyboard .next-entry{border-color:var(--green);color:var(--green);background:var(--panel2)}
+.derive .keyboard-action .key-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;color:var(--text);font:11px system-ui;white-space:nowrap;pointer-events:none;opacity:0;z-index:10;box-shadow:0 5px 16px #0003}
+.derive .keyboard-action:focus-visible .key-tooltip,.derive .keyboard-action.show-tip .key-tooltip{opacity:1}
+@media(hover:hover){.derive .keyboard-action:hover .key-tooltip{opacity:1}}
+.derive .math-keyboard .construction-keys{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:8px 0}
+.derive .construction-keys .key{display:flex;align-items:center;justify-content:center;min-width:0;font-size:19px;padding:3px}
+.derive .construction-keys .sign-key{font:15px system-ui}
+@media(max-width:700px){.derive .keyboard-action .action-label{display:none}.derive .keyboard-action svg{width:23px;height:23px}.derive .math-keyboard .keyboard-action{min-height:45px}.derive .math-keyboard .reference-key{height:59px;font-size:23px}.derive .shortcut-bank-toggle{font-size:12px}}

@@ -3,6 +3,8 @@ import {createRoot} from "react-dom/client";
 import {MathText,compactMath} from "./math-display";
 import {FIRST_SKILLS} from "./curriculum";
 import {LearningWorkshop} from "./learning-workshop";
+import {MathKeyboard,type EntryHandle} from "./math-entry";
+import {earnedShortcuts,insertMath,nextEntryTarget,type ReferenceShortcut} from "./keyboard-model";
 import {RuleAssembly,substitutedRule,type AssemblyPair} from "./rule-assembly";
 type InstallPromptEvent = Event & {prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 type StepKind = "move" | "pair" | "assemble" | "formula" | "input" | "rule" | "workshop";
@@ -427,7 +429,8 @@ function DeriveLab() {
   const [level,setLevel]=React.useState(1);
   const [detail,setDetail]=React.useState<Skill|null>(null);
   const [exploring,setExploring]=React.useState(false);
-  const [extraKeys,setExtraKeys]=React.useState(false);
+  const [legacySelection,setLegacySelection]=React.useState<[number,number]>([0,0]);
+  const [newReferenceKeys,setNewReferenceKeys]=React.useState<ReferenceShortcut[]>([]);
   const [storageOk,setStorageOk]=React.useState(true);
   const [light,setLight]=React.useState(false);
   const [installPrompt,setInstallPrompt]=React.useState<InstallPromptEvent|null>(null);
@@ -447,6 +450,9 @@ function DeriveLab() {
   const factorSlotsRef=React.useRef<HTMLDivElement>(null);
 
   const skill=SKILLS.find(s=>s.id===exercise.id)!;
+  const shortcuts=earnedShortcuts(progress.stats);
+  function rewardReferenceKeys(next:Progress){const previous=new Set(shortcuts.map(s=>s.id));setNewReferenceKeys(earnedShortcuts(next.stats).filter(s=>!previous.has(s.id)));}
+  React.useEffect(()=>setLegacySelection([0,0]),[index,exerciseSerial]);
   const current=exercise.steps[index];
   const quotient=exercise.pair?.operation==="quotient";
   const stat=progress.stats[skill.id]||{solved:0,clean:0,history:[]};
@@ -520,7 +526,7 @@ function DeriveLab() {
     setExercise(makeTask(id));setIndex(0);setDone(false);setAnswer("");setPicked(null);
     setIdentified({k:false,u:false,v:false});setPairActive(null);setPairDrafts({u:"",v:""});setPairValidated({u:false,v:false});cancelFactorDrag();
     setHadError(false);setUsedHelp(false);setHint(false);setFeedback(null);
-    setEarned(0);setNewUnlocks([]);
+    setEarned(0);setNewUnlocks([]);setNewReferenceKeys([]);setLegacySelection([0,0]);
     setExploring(sandbox);setView("atelier");setDetail(null);setLevel(next.level);
     accepted.current=-1;
   }
@@ -530,7 +536,7 @@ function DeriveLab() {
     if(exploring||!available(skill)){setPracticeCounts(p=>({...p,[skill.id]:(p[skill.id]||0)+1}));return;}
     const reward=dirty?10:30,old=progress.stats[skill.id]||{solved:0,clean:0,history:[]};
     const next={...progress,xp:progress.xp+reward,stats:{...progress.stats,[skill.id]:{solved:old.solved+1,clean:old.clean+(dirty?0:1),history:[...old.history,!dirty].slice(-20)}}};
-    setNewUnlocks(SKILLS.filter(s=>!available(s,progress)&&available(s,next)).map(s=>s.title));setProgress(next);setEarned(reward);
+    rewardReferenceKeys(next);setNewUnlocks(SKILLS.filter(s=>!available(s,progress)&&available(s,next)).map(s=>s.title));setProgress(next);setEarned(reward);
   }
 
   function chooseSkill(s:Skill){
@@ -570,7 +576,7 @@ function DeriveLab() {
         history:[...old.history,!dirty].slice(-20)
       }}
     };
-    setNewUnlocks(SKILLS.filter(s=>!available(s,progress)&&available(s,next)).map(s=>s.title));
+    rewardReferenceKeys(next);setNewUnlocks(SKILLS.filter(s=>!available(s,progress)&&available(s,next)).map(s=>s.title));
     setProgress(next);setEarned(reward);
   }
 
@@ -708,16 +714,13 @@ function DeriveLab() {
 
   React.useEffect(()=>{cancelFactorDrag();setPicked(null);},[view]);
 
-  function insert(text:string,inside=false){
+  function insert(text:string,inside=false,expression=false){
     if(!keyboardActive)return;
-    const el=inputRef.current;
-    const from=el?.selectionStart??answer.length;let to=el?.selectionEnd??from;
-    if(answer[from]==="□"&&from===to)to++;
-    text=text.slice(0,Math.max(0,180-answer.length+(to-from)));
-    setFeedback(null);
-    setAnswer(answer.slice(0,from)+text+answer.slice(to));
-    const hole=text.indexOf("□"),caret=hole>=0?from+hole:from+text.length-(inside?1:0);
-    setTimeout(()=>{el?.focus({preventScroll:true});el?.setSelectionRange(caret,caret+(hole>=0?1:0));},0);
+    const el=inputRef.current,from=el?.selectionStart??answer.length,to=el?.selectionEnd??from;
+    const edit=insertMath(answer,from,to,text,expression);if(edit.value.length>180)return;
+    const caret=edit.start-(inside&&!text.includes("□")?1:0),end=edit.end-(inside&&!text.includes("□")?1:0);
+    setFeedback(null);setAnswer(edit.value);setLegacySelection([caret,end]);
+    setTimeout(()=>{el?.focus({preventScroll:true});el?.setSelectionRange(caret,end);},0);
   }
 
   function erase(){
@@ -731,6 +734,7 @@ function DeriveLab() {
 
   function handleAnswerKey(e:React.KeyboardEvent<HTMLInputElement>){
     if(e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.key==="Tab"&&!e.shiftKey&&nextEntryTarget([answer],0,...legacySelection)){e.preventDefault();legacyNextHole();return;}
     if(e.key==="Enter"){e.preventDefault();if(answer.trim())validateAnswer();return;}
     if(e.key==="Backspace"){e.preventDefault();erase();return;}
     if(e.key==="Delete"){
@@ -745,39 +749,12 @@ function DeriveLab() {
   function legacyHole(number:number){
     return <button className="fraction-hole" type="button" aria-label={"Case de fraction "+(number+1)} onPointerDown={e=>e.preventDefault()} onClick={()=>{let at=-1;for(let i=0;i<=number;i++)at=answer.indexOf("□",at+1);inputRef.current?.focus({preventScroll:true});inputRef.current?.setSelectionRange(at,at+1);}}>□</button>;
   }
-  function legacyNextHole(){const start=inputRef.current?.selectionEnd??0;let at=answer.indexOf("□",start);if(at<0)at=answer.indexOf("□");if(at>=0){inputRef.current?.focus({preventScroll:true});inputRef.current?.setSelectionRange(at,at+1);}}
+  function legacyFocus(position=answer.length){const end=answer[position]==="□"?position+1:position;setLegacySelection([position,end]);setTimeout(()=>{inputRef.current?.focus({preventScroll:true});inputRef.current?.setSelectionRange(position,end);},0);}
+  function legacyNextHole(){const target=nextEntryTarget([answer],0,...legacySelection);if(target)legacyFocus(target.position);}
   function showHint(){setHint(true);setUsedHelp(true);}
-  const keyMap:Record<string,[string,boolean?]>={
-    "×":["*"],"÷":["(□)/(□)"],"−":["-"],"x²":["x^2"],"xⁿ":["x^(□)"],
-    "√":["sqrt(□)"],"eˣ":["e^(□)"],"ln":["ln(□)"],
-    "sin":["sin()",true],"cos":["cos()",true],"1/x":["1/()",true]
-  };
   const keyboardActive=!done&&(current?.kind==="input"||(current?.kind==="pair"&&!!pairActive&&!pairValidated[pairActive]));
-  const legacyKeyboard=<section className="keyboard inline-keyboard" aria-label="Clavier mathématique">
-                <div className="tooltitle">Clavier mathématique</div>
-                <p className="toolsub">Compose ta réponse avec les touches ci-dessous.</p>
-                <div className="keys">
-                  {["7","8","9","+","−","4","5","6","×","÷","1","2","3","(",")","0",".","x","x²","xⁿ"].map(key=>
-                    <button key={key} disabled={!keyboardActive}
-                      aria-label={key==="÷"?"Insérer une fraction":undefined} className={"key "+(key.includes("x")?"variable":["+","−","×","÷"].includes(key)?"operator":"")}
-                      onPointerDown={e=>e.preventDefault()}
-                      onClick={()=>{const entry:[string,boolean?]=keyMap[key]||[key,false];insert(entry[0],entry[1]);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
-                  )}
-                </div>
-                <div className="keytools">
-                  <button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>insert("^2")}>a²</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={legacyNextHole}>Case suivante</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={()=>{setAnswer(answer.startsWith("-")?answer.slice(1):"-"+answer);}}>+/−</button><button className="key" disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()} onClick={erase} aria-label="Effacer le caractère précédent">⌫ Effacer</button>
-                  <button className="key" disabled={!keyboardActive} onClick={()=>{setAnswer("");inputRef.current?.focus({preventScroll:true});}}>Vider la case</button>
-                </div>
-                <button className="morekeys" aria-expanded={extraKeys} onClick={()=>setExtraKeys(!extraKeys)}>{extraKeys?"−":"+"} Fonctions & fractions</button>
-                {extraKeys&&<div className="extra">
-                  {["1/x","√","eˣ","ln","sin","cos"].map(key=>
-                    <button className="key" key={key} disabled={!keyboardActive} onPointerDown={e=>e.preventDefault()}
-                      onClick={()=>{const [text,inside]=keyMap[key];insert(text,inside);}}><MathText text={({"x²":"x^2","xⁿ":"x^n","eˣ":"e^x"} as Record<string,string>)[key]||(key==="÷"?"□/□":key==="√"?"sqrt(□)":key)}/></button>
-                  )}
-                </div>}
-                <button className="primary validate-key" disabled={!keyboardActive||!answer.trim()} onClick={validateAnswer}>{current.kind==="pair"?"Valider "+pairActive+"′(x)":quotient?"Valider le numérateur":"Valider la réponse"} <span>↗</span></button>
-                <div className="keyboard-note">Sur ordinateur, le clavier physique fonctionne aussi.</div>
-              </section>;
+  const legacyEntry:{current:EntryHandle}={current:{insert:(text,expression=false)=>insert(text,false,expression),erase,clear:()=>{setAnswer("");setFeedback(null);legacyFocus(0);},next:legacyNextHole,selection:()=>legacySelection,focus:legacyFocus,toggleSign:()=>{const next=answer.startsWith("-(")&&answer.endsWith(")")?answer.slice(2,-1):answer.startsWith("-")?answer.slice(1):/[+-]/.test(answer.slice(1))?"-("+answer+")":"-"+answer;setAnswer(next);legacyFocus(next.length);}}};
+  const legacyKeyboard=<MathKeyboard entry={legacyEntry} enabled={keyboardActive} canValidate={keyboardActive&&!!answer.trim()&&!answer.includes("□")} onValidate={validateAnswer} onSign={()=>legacyEntry.current.toggleSign()} canClear={!!answer} onNext={legacyNextHole} canNext={!!nextEntryTarget([answer],0,...legacySelection)} shortcuts={shortcuts} newlyUnlocked={newReferenceKeys}/>;
   const rate=stat.solved?Math.round(100*stat.clean/stat.solved):0;
 
   function skillInfo(){return <div className="panel skill-progress inline-skill-info">
@@ -862,7 +839,7 @@ function DeriveLab() {
           {infoOpen&&<div className="mobile-skill-info">{skillInfo()}</div>}
 
           <div className={"studio"+(skill.level===2?" legacy-workshop":"")}>
-            {skill.level===1?<LearningWorkshop key={skill.id+exerciseSerial} id={skill.id} round={stat.solved+(practiceCounts[skill.id]||0)} earned={earned} exploring={exploring} unlocks={newUnlocks} onComplete={finishWorkshop} onNext={()=>start(skill.id,exploring)}/>:<><section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
+            {skill.level===1?<LearningWorkshop key={skill.id+exerciseSerial} id={skill.id} round={stat.solved+(practiceCounts[skill.id]||0)} earned={earned} exploring={exploring} unlocks={newUnlocks} onComplete={finishWorkshop} onNext={()=>start(skill.id,exploring)} shortcuts={shortcuts} newlyUnlocked={newReferenceKeys}/>:<><section className={"panel board"+(quotient?" quotient-board":"")+(quotient&&index>0?" quotient-in-progress":"")} aria-label="Zone de dérivation">
               <div className="function-area">
                 <div className="function-meta">
                   <span className="overline">Fonction à transformer</span>
@@ -942,6 +919,7 @@ function DeriveLab() {
                             style={{width:Math.min(400,Math.max(82,answer.length*15+28))}}
                             aria-label="Réponse à compléter" aria-describedby="math-input-help" placeholder=""
                             readOnly inputMode="none" autoComplete="off" autoCapitalize="off" spellCheck={false}
+                            onSelect={e=>{const el=e.currentTarget,range:[number,number]=[el.selectionStart||0,el.selectionEnd||0];setLegacySelection(old=>old[0]===range[0]&&old[1]===range[1]?old:range);}}
                             onPaste={e=>{e.preventDefault();insert(e.clipboardData.getData("text"));}}
                             onKeyDown={handleAnswerKey}/>
                           {answer&&<span className="answer-render" aria-hidden="true"><MathText text={answer} compact={quotient||index===exercise.steps.length-1} slot={legacyHole}/></span>}

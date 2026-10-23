@@ -28,7 +28,12 @@ Les exposants, les familles des sommes et les degrés des quotients progressent 
 - Clavier à droite des réponses à partir de 701 px ; sous la réponse sur smartphone.
 - Clavier natif mobile désactivé ; saisie au clavier physique et collage possibles.
 - Touche fraction à deux cases, sélection du numérateur en premier, cases directement sélectionnables et bouton « Case suivante ».
-- Touches racine, exponentielle, carré, puissances, signes et fonctions usuelles.
+- Touche générale a^□ : complète l’exposant de l’expression précédente. Sans base, elle propose aussi une case pour la base. Les raccourcis x² et a² restent disponibles.
+- Touche (□) et sélection de l’intérieur ; toucher « ) » permet de sortir d’une parenthèse déjà fermée sans la doubler.
+- Effacement d’un caractère, gomme « Vider » et flèche vers la case suivante réunis sur une ligne. Libellés courts sur grand écran, icônes sur smartphone, noms accessibles et indication au maintien du doigt.
+- La flèche parcourt les cases vides des fractions et des exposants, puis les autres blocs de réponse ; elle est inactive s’il n’en reste aucune.
+- Bloc repliable « Mes raccourcis » : trois réussites propres gagnent les références de la compétence (2x et 3x² pour les puissances, −1/x², 1/(2√x), eˣ, 1/x, cos(x), −sin(x)). Six touches visibles au maximum, puis « Tous mes raccourcis ».
+- Les raccourcis sont disponibles dans les deux niveaux, sans choix automatique selon la question. Ils s’insèrent au curseur ; un facteur est parenthésé si nécessaire, par exemple 5(2x). La progression existante détermine les touches déjà gagnées, sans nouvelle sauvegarde à migrer.
 - Écriture mathématique Computer Modern avec fractions, primes et radicaux ; aucune dépendance CDN.
 - Bouton de taille des explications : 100 %, 110 %, 120 %, préférence conservée localement.
 - Bouton info de la compétence sélectionnée : statistiques dépliées dans la colonne gauche, entre deux compétences. Sur écran étroit, ce bouton est près du titre.
@@ -54,6 +59,7 @@ npm run dev
 - `curriculum.ts` : parcours de Première et génération des exercices.
 - `learning-workshop.tsx` : étapes, identification et réponses multiples.
 - `math-entry.tsx` : champs mathématiques et clavier commun.
+- `keyboard-model.ts` : déblocage des raccourcis, insertion et navigation des cases.
 - `math-display.tsx` : présentation des fractions, racines, puissances et primes.
 - `math-engine.ts` : lecture et comparaison numérique des expressions.
 - `rule-assembly.tsx` : substitution dans les règles du produit et du quotient.

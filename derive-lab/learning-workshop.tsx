@@ -4,6 +4,7 @@ import {sameMath} from "./math-engine";
 import {MathText} from "./math-display";
 import {MathEntry,MathKeyboard,type EntryHandle} from "./math-entry";
 import {RuleAssembly,substitutedRule} from "./rule-assembly";
+import {nextEntryTarget,type ReferenceShortcut} from "./keyboard-model";
 
 function RuleFormula({text}:{text:string}){
  const [left,right]=text.split(" = ");
@@ -33,9 +34,10 @@ function Identification({step,onComplete,onError}:{step:Extract<PlanStep,{kind:"
  </div>;
 }
 
-export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,onNext}:{id:string;round:number;earned:number;exploring:boolean;unlocks:string[];onComplete:(final:string,dirty:boolean)=>void;onNext:()=>void}){
+export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,onNext,shortcuts,newlyUnlocked}:{id:string;round:number;earned:number;exploring:boolean;unlocks:string[];onComplete:(final:string,dirty:boolean)=>void;onNext:()=>void;shortcuts:ReferenceShortcut[];newlyUnlocked:ReferenceShortcut[]}){
  const [plan]=React.useState(()=>makeLearningPlan(id,round)),[phase,setPhase]=React.useState(0),[finished,setFinished]=React.useState(false);
  const [answers,setAnswers]=React.useState<string[]>([]),[signs,setSigns]=React.useState<number[]>([]),[active,setActive]=React.useState(0);
+ const [cursor,setCursor]=React.useState<[number,number]>([0,0]);
  const [feedback,setFeedback]=React.useState("");const [hint,setHint]=React.useState(false),[lastWork,setLastWork]=React.useState("");
  const dirty=React.useRef(false),entries=React.useRef<(EntryHandle|null)[]>([]),stage=plan.steps[phase];
  const activeEntry={get current(){return entries.current[active]||null;}};
@@ -45,7 +47,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  function advance(work=""){
   if(work)setLastWork(work);
   if(phase===plan.steps.length-1){setFinished(true);onComplete(plan.final,dirty.current);return;}
-  setPhase(phase+1);setAnswers([]);setSigns([]);setActive(0);setFeedback("");setHint(false);entries.current=[];
+  setPhase(phase+1);setAnswers([]);setSigns([]);setActive(0);setCursor([0,0]);setFeedback("");setHint(false);entries.current=[];
  }
  function validate(){
   if(stage.kind!=="fill")return;
@@ -65,7 +67,10 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  React.useEffect(()=>{if(stage.kind==="fill")entries.current[0]?.focus();},[phase]);
  const ready=stage.kind==="fill"&&stage.fields.every((_,i)=>answers[i]?.trim()&&!answers[i].includes("□"));
  const signToggle=(i:number)=>setSigns(s=>{const next=[...s];next[i]=s[i]===-1?1:-1;return next;});
- const entry=(i:number)=>stage.kind==="fill"?<MathEntry ref={el=>{entries.current[i]=el;}} value={answers[i]||""} label={stage.fields[i].label} active={active===i} onChange={value=>changed(i,value)} onActivate={()=>setActive(i)} onSubmit={validate}/>:null;
+ const target=stage.kind==="fill"?nextEntryTarget(stage.fields.map((_,i)=>answers[i]||""),active,...cursor):null;
+ const navigate=()=>{if(!target)return false;setActive(target.field);setCursor([target.position,target.position+((answers[target.field]||"")[target.position]==="□"?1:0)]);entries.current[target.field]?.focus(target.position);return true;};
+ const clearActive=()=>{setSigns(s=>{const next=[...s];next[active]=1;return next;});activeEntry.current?.clear();};
+ const entry=(i:number)=>stage.kind==="fill"?<MathEntry ref={el=>{entries.current[i]=el;}} value={answers[i]||""} label={stage.fields[i].label} active={active===i} onChange={value=>changed(i,value)} onActivate={()=>{setActive(i);setCursor(entries.current[i]?.selection()||[0,0]);}} onCursorChange={setCursor} onNavigate={navigate} onSubmit={validate}/>:null;
  const context=plan.steps.find((step):step is Extract<PlanStep,{kind:"notice"|"identify"}>=>step.kind==="notice"||step.kind==="identify");
  const headerStage=!finished&&(stage.kind==="notice"||stage.kind==="identify");
  const title=<div className="step-title"><span className="number">{phase+1}</span>{stage.title}</div>;
@@ -104,6 +109,6 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
    </>}
   </div>
  </section>
- <aside className="keyboard-dock"><MathKeyboard entry={activeEntry} enabled={!finished&&stage.kind==="fill"} onValidate={validate} canValidate={!!ready&&!finished} onSign={()=>{if(stage.kind==="fill"&&stage.layout==="sum")signToggle(active);else activeEntry.current?.toggleSign();}}/></aside>
+ <aside className="keyboard-dock"><MathKeyboard entry={activeEntry} enabled={!finished&&stage.kind==="fill"} onValidate={validate} canValidate={!!ready&&!finished} onSign={()=>{if(stage.kind==="fill"&&stage.layout==="sum")signToggle(active);else activeEntry.current?.toggleSign();}} onClear={clearActive} canClear={!!answers[active]||signs[active]===-1} onNext={navigate} canNext={!!target} shortcuts={shortcuts} newlyUnlocked={newlyUnlocked}/></aside>
  </div>;
 }

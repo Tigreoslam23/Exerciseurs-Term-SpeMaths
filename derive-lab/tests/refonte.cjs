@@ -90,21 +90,21 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
    if(skill.id==='basics'){
     await click(q('[aria-label="Insérer une fraction"]'));assert.equal(inputs[0].value,'(□)/(□)');assert.equal(inputs[0].selectionStart,1);
     await click([...d.querySelectorAll('.keys button')].find(b=>b.textContent.trim()==='6'));assert.equal(inputs[0].value,'(6)/(□)');
-    await click([...d.querySelectorAll('button')].find(b=>b.textContent==='Case suivante'));
+    await click(q('[aria-label="Case suivante"]'));
     await click(q('[aria-label="Insérer une racine carrée"]'));assert.equal(inputs[0].value,'(6)/(sqrt(□))');
     assert.ok(q('.math-entry-render .radicand'));
-    await click([...d.querySelectorAll('button')].find(b=>b.textContent==='Vider la case'));
+    await click(q('[aria-label="Vider la case"]'));
     await click(q('[aria-label="Insérer une fraction"]'));
     await click([...d.querySelectorAll('.keys button')].find(b=>b.textContent.trim()==='6'));
-    await click([...d.querySelectorAll('button')].find(b=>b.textContent==='Case suivante'));
+    await click(q('[aria-label="Case suivante"]'));
     for(const key of ['(','2','x','+','3',')'])await click([...d.querySelectorAll('.keys button')].find(b=>b.textContent.trim()===key));
     await click(q('[aria-label="Élever au carré"]'));
     assert.ok(sameMath(inputs[0].value,'6/(2x+3)^2'),'Saisie d’un dénominateur affine au carré');
-    await click([...d.querySelectorAll('button')].find(b=>b.textContent==='Vider la case'));
+    await click(q('[aria-label="Vider la case"]'));
     await click(q('[aria-label="Changer le signe"]'));assert.equal(inputs[0].value,'-');
     await click(q('[aria-label="Insérer une fraction"]'));assert.equal(inputs[0].value,'-(□)/(□)');
     assert.equal(inputs[0].selectionStart,2,'Le signe ne déplace pas la saisie hors du numérateur');
-    await click([...d.querySelectorAll('button')].find(b=>b.textContent==='Vider la case'));
+    await click(q('[aria-label="Vider la case"]'));
    }
    for(let i=0;i<step.fields.length;i++)await paste(inputs[i],step.fields[i].expected);
    assert.ok(!q('.math-keyboard .validate-key').disabled,'Réponse complète : '+skill.id);
