@@ -561,3 +561,6 @@ body{margin:0;background:#0b0e17}
 .derive .affine-assembly .identify-destinations>button:last-child{min-width:150px}
 .derive .affine-assembly .rule-banner{font-size:25px}
 @media(max-width:400px){.derive .header-context .reference-identification .identify-source{font-size:18px}.derive .reference-identification .identify-sources{gap:4px}.derive .header-context .reference-identification .identify-destinations>button{font-size:18px}.derive .affine-assembly .identify-source{font-size:21px}}
+
+@container(min-width:640px){.derive .affine-board .workshop-header{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}}
+.derive .reference-identification .identify-destinations>button>.math{white-space:nowrap}

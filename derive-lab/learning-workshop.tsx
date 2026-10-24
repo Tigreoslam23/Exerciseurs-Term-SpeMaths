@@ -89,7 +89,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  const headerStage=!finished&&phase===0&&(stage.kind==="notice"||stage.kind==="identify");
  const title=<div className="step-title"><span className="number">{phase+1}</span>{stage.title}</div>;
  return <div className="workshop-layout">
- <section className="panel board learning-board" aria-label="Zone de dérivation">
+ <section className={"panel board learning-board"+(id==="affine-compose"?" affine-board":"")} aria-label="Zone de dérivation">
   <div className="function-area workshop-header">
    <div className="function-overview"><div className="function-meta"><span className="overline">Fonction à dériver</span><span className="domain">{plan.domain}</span></div><div className="original"><MathText text={"f(x) = "+plan.expression} compact/></div><p className="difficulty">{plan.difficulty}</p></div>
    {context&&<div className="header-context" aria-label={headerStage&&stage.kind==="identify"?"Identification de la fonction":"Règle de dérivation"}>
