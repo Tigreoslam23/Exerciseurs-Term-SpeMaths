@@ -5,6 +5,7 @@ import {MathText} from "./math-display";
 import {MathEntry,MathKeyboard,type EntryHandle} from "./math-entry";
 import {RuleAssembly,substitutedRule} from "./rule-assembly";
 import {nextEntryTarget,type ReferenceShortcut} from "./keyboard-model";
+import {FractionSources} from "./fraction-sources";
 
 function RuleFormula({text}:{text:string}){
  const [left,right]=text.split(" = ");
@@ -38,6 +39,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  const [plan]=React.useState(()=>makeLearningPlan(id,round)),[phase,setPhase]=React.useState(0),[finished,setFinished]=React.useState(false);
  const [answers,setAnswers]=React.useState<string[]>([]),[signs,setSigns]=React.useState<number[]>([]),[active,setActive]=React.useState(0);
  const [cursor,setCursor]=React.useState<[number,number]>([0,0]);
+ const [pickedSource,setPickedSource]=React.useState<number|null>(null),[dragOver,setDragOver]=React.useState<number|null>(null);
  const [feedback,setFeedback]=React.useState("");const [hint,setHint]=React.useState(false),[lastWork,setLastWork]=React.useState("");
  const dirty=React.useRef(false),entries=React.useRef<(EntryHandle|null)[]>([]),stage=plan.steps[phase];
  const activeEntry={get current(){return entries.current[active]||null;}};
@@ -47,7 +49,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  function advance(work=""){
   if(work)setLastWork(work);
   if(phase===plan.steps.length-1){setFinished(true);onComplete(plan.final,dirty.current);return;}
-  setPhase(phase+1);setAnswers([]);setSigns([]);setActive(0);setCursor([0,0]);setFeedback("");setHint(false);entries.current=[];
+  setPhase(phase+1);setAnswers([]);setSigns([]);setActive(0);setCursor([0,0]);setPickedSource(null);setDragOver(null);setFeedback("");setHint(false);entries.current=[];
  }
  function validate(){
   if(stage.kind!=="fill")return;
@@ -59,7 +61,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
     const terms=raw.replace(/[ *]/g,"").match(/[+-]?[^+-]+/g)||[],degrees=terms.map(t=>t.includes("x")?Number(t.split("^")[1]||1):0);
     if(new Set(degrees).size!==degrees.length){flagError();setFeedback("Regroupe les termes de même degré : il doit rester un seul terme par puissance de x.");setActive(i);return;}
    }
-   if(!sameMath(value,field.expected)){flagError();setFeedback("Le bloc « "+field.label+" » est à revoir. "+stage.hint);setActive(i);entries.current[i]?.focus();return;}
+   if(!sameMath(value,field.expected)){flagError();setFeedback("Le bloc « "+field.label+" » est à revoir. "+stage.hint);setActive(i);entries.current[i]?.focus(stage.dragSources&&i===0&&!/^[−-]/.test(value)?0:undefined);return;}
   }
   let result=stage.layout==="sum"?joinTerms(stage.fields.map((_,i)=>signs[i]===-1?"-"+answers[i]:answers[i])):stage.layout==="fraction"?`(${answers[0]})/(${answers[1]})`:stage.after?.startsWith("/")?`(${answers[0]})${stage.after}`:answers[0];
   advance(stage.fields.length>1&&!stage.layout?stage.fields.map((field,i)=>field.label.replace(/′/g,"'")+" = "+answers[i]).join(" ; "):(stage.before||"f'(x) = ")+result+(stage.after&&!stage.after.startsWith("/")?stage.after:""));
@@ -71,6 +73,16 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
  const navigate=()=>{if(!target)return false;setActive(target.field);setCursor([target.position,target.position+((answers[target.field]||"")[target.position]==="□"?1:0)]);entries.current[target.field]?.focus(target.position);return true;};
  const clearActive=()=>{setSigns(s=>{const next=[...s];next[active]=1;return next;});activeEntry.current?.clear();};
  const entry=(i:number)=>stage.kind==="fill"?<MathEntry ref={el=>{entries.current[i]=el;}} value={answers[i]||""} label={stage.fields[i].label} active={active===i} onChange={value=>changed(i,value)} onActivate={()=>{setActive(i);setCursor(entries.current[i]?.selection()||[0,0]);}} onCursorChange={setCursor} onNavigate={navigate} onSubmit={validate}/>:null;
+ const placeSource=(source:number,destination:number)=>{
+  if(stage.kind!=="fill"||!stage.dragSources?.[source])return;
+  if(source!==destination){flagError();setFeedback(destination===0?"Place u′(x) au numérateur.":"Place u(x) au dénominateur.");return;}
+  const value="("+stage.dragSources[source].value+")",old=answers[destination]||"";
+  const placed=destination===0?(/^[−-]/.test(old)?"-":"")+value:value+(/\)\^(?:2|\(2\))$/.test(old)?"^2":"");
+  setPickedSource(null);setActive(destination);entries.current[destination]?.replace(placed,destination===0?0:placed.length);
+ };
+ const fractionEntry=(i:number)=>stage.kind==="fill"&&stage.dragSources?<span className={"inverse-target"+(pickedSource!==null?" ready":"")+(dragOver===i?" over":"")} data-inverse-target={i} onClick={()=>{if(pickedSource!==null)placeSource(pickedSource,i);}}>
+  {entry(i)}{!answers[i]&&<button className="inverse-drop-hint" type="button" aria-label={i===0?"Déposer u prime au numérateur":"Déposer u au dénominateur"} onClick={e=>{e.stopPropagation();if(pickedSource!==null)placeSource(pickedSource,i);else setFeedback("Sélectionne une carte, puis touche sa destination.");}}>Déposer ici</button>}
+ </span>:entry(i);
  const context=plan.steps.find((step):step is Extract<PlanStep,{kind:"notice"|"identify"}>=>step.kind==="notice"||step.kind==="identify");
  const headerStage=!finished&&(stage.kind==="notice"||stage.kind==="identify");
  const title=<div className="step-title"><span className="number">{phase+1}</span>{stage.title}</div>;
@@ -93,13 +105,14 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
     {stage.kind==="assemble"&&<RuleAssembly key={phase} pair={stage.pair} onComplete={()=>advance("f'(x) = "+substitutedRule(stage.pair))} onError={flagError}/>}
     {stage.kind==="fill"&&<div className="response-layout">
       <div className="response-content">
+       {stage.dragSources&&<><FractionSources items={stage.dragSources} picked={pickedSource} onPick={setPickedSource} onDrop={placeSource} onOver={setDragOver}/><p className="inverse-instruction">Glisse les expressions dans la fraction, ou sélectionne une carte puis sa case. Ajoute toi-même le signe moins et le carré avec le clavier.</p></>}
        {stage.layout==="sum"?<>
         <div className="reference-equation"><MathText text={"f'(x) = "+stage.references!.map(s=>"("+s+")'").join(" + ")} compact/></div>
         <div className="sum-response"><MathText text="f'(x) = "/>{stage.fields.map((field,i)=><div className="sum-term" key={i}>
          {id==="sum-pair"&&<span className="sum-field-label"><MathText text={field.label+" = "}/></span>}
          <div className="signed-answer"><button className="sign-switch" aria-label={"Signe du terme "+(i+1)} onClick={()=>signToggle(i)}>{signs[i]===-1?"−":"+"}</button>{entry(i)}</div>
         </div>)}</div>
-       </>:stage.layout==="fraction"?<div className="fraction-response"><MathText text={stage.before||"f'(x) = "}/><span className="math-frac editable-fraction"><span className="math-numerator">{entry(0)}</span><span className="math-denominator">{entry(1)}</span></span></div>:stage.fields.length>1?<div className="parallel-response">{stage.fields.map((field,i)=><div className="derivative-field" key={i}><div className="derivative-reference"><MathText text={field.label.replace(/′/g,"'")+" = "+(stage.references?.[i]?"("+stage.references[i]+")'":"")} compact/></div>{entry(i)}</div>)}</div>:<div className="single-response"><MathText text={(stage.before||"f'(x) = ")+"□"+(stage.after||"")} compact slot={entry(0)}/></div>}
+       </>:stage.layout==="fraction"?<div className="fraction-response"><MathText text={stage.before||"f'(x) = "}/><span className="math-frac editable-fraction"><span className="math-numerator">{fractionEntry(0)}</span><span className="math-denominator">{fractionEntry(1)}</span></span></div>:stage.fields.length>1?<div className="parallel-response">{stage.fields.map((field,i)=><div className="derivative-field" key={i}><div className="derivative-reference"><MathText text={field.label.replace(/′/g,"'")+" = "+(stage.references?.[i]?"("+stage.references[i]+")'":"")} compact/></div>{entry(i)}</div>)}</div>:<div className="single-response"><MathText text={(stage.before||"f'(x) = ")+"□"+(stage.after||"")} compact slot={entry(0)}/></div>}
        <p className="entry-help">Touche la case à compléter, puis utilise le clavier mathématique.</p>
        {feedback&&<div className="feedback" role="status">{feedback}</div>}
        <button className="textbtn" onClick={()=>{dirty.current=true;setHint(!hint);}}>✧ Un indice</button>

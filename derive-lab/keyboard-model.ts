@@ -11,9 +11,25 @@ export const REFERENCE_SHORTCUTS:ReferenceShortcut[]=[
 ];
 export const earnedShortcuts=(stats:Record<string,{clean:number}>)=>REFERENCE_SHORTCUTS.filter(s=>(stats[s.skill]?.clean||0)>=3);
 
+// Le curseur est juste avant la parenthèse qui termine un exposant complété.
+function completedExponent(value:string,start:number,end:number){
+ if(start!==end||value[start]!==")")return null;
+ const stack:number[]=[];
+ for(let i=0;i<start;i++){if(value[i]==="(")stack.push(i);else if(value[i]===")")stack.pop();}
+ const open=stack[stack.length-1];
+ if(open===undefined||value[open-1]!=="^")return null;
+ const body=value.slice(open+1,start);
+ if(!body.trim()||body.includes("□")||!/[\da-z)]\s*$/i.test(body))return null;
+ return {position:start+1,body,base:value[open-2]};
+}
+
 // Une expression gagnée reste un facteur entier : 5 puis 2x donne 5(2x).
 export function insertMath(value:string,from:number,to:number,text:string,expression=false){
  from=Math.max(0,Math.min(from,value.length));to=Math.max(from,Math.min(to,value.length));
+ const exponent=completedExponent(value,from,to);
+ // Les chiffres restent dans l’exposant (10, −12…). Une opération ou un
+ // nouveau facteur reprend à la ligne principale, comme après x³.
+ if(exponent&&exponent.base!=="e"&&/^[+−-]?\d+(?:[.,]\d+)?$/.test(exponent.body)&&!/^\d+$|^[.,]$/.test(text)&&text!==")")from=to=exponent.position;
  if(text===")"&&from===to&&value[from]===")"&&(value.match(/\(/g)||[]).length===(value.match(/\)/g)||[]).length)return {value,start:from+1,end:from+1};
  if(text.startsWith("^")&&from===to){while(value[from]===")"){from++;to++;}}
  if(value[from]==="□"&&from===to)to++;
@@ -26,6 +42,8 @@ export function insertMath(value:string,from:number,to:number,text:string,expres
 
 export function nextEntryTarget(values:string[],active:number,start:number,end:number):{field:number;position:number}|null{
  const value=values[active]||"",holes=Array.from(value.matchAll(/□/g),match=>match.index!);
+ const exponent=completedExponent(value,start,end);
+ if(exponent)return {field:active,position:exponent.position};
  const selected=(p:number)=>p>=start&&p<=Math.max(start,end-1);
  const after=holes.find(p=>p>=end&&!selected(p));
  if(after!==undefined)return {field:active,position:after};

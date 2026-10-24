@@ -17,7 +17,7 @@ Jouer : https://tigreoslam23.github.io/Exerciseurs-Term-SpeMaths/derive-lab/
 9. Sommes de deux à quatre fonctions : un bloc par terme et un signe +/− indépendant.
 10. Produit : identification, dérivées, substitution par glisser-déposer, simplification.
 11. Quotient : homographies non constantes, puis fractions de polynômes de degrés différents dont le degré maximal vaut 3.
-12. Inverse d’une fonction u : u polynomiale de degré 1 à 5 ou combinaison de références ; deux champs pour −u′ et u², sans développer le dénominateur.
+12. Inverse d’une fonction u : u polynomiale de degré 1 à 5 ou combinaison de références ; calcul de u′, puis glisser-déposer de u′ et u dans les deux champs. Le signe moins et le carré sont ajoutés par l’élève au clavier, sans développer le dénominateur. Le clic carte puis destination fonctionne aussi.
 13. Composée affine : puissances, inverse, racine et exponentielle de ax+b.
 
 Les approfondissements de Terminale sont conservés dans leur onglet.
@@ -31,7 +31,8 @@ Les exposants, les familles des sommes et les degrés des quotients progressent 
 - Touche générale a^□ : complète l’exposant de l’expression précédente. Sans base, elle propose aussi une case pour la base. Les raccourcis x² et a² restent disponibles.
 - Touche (□) et sélection de l’intérieur ; toucher « ) » permet de sortir d’une parenthèse déjà fermée sans la doubler.
 - Effacement d’un caractère, gomme « Vider » et flèche vers la case suivante réunis sur une ligne. Libellés courts sur grand écran, icônes sur smartphone, noms accessibles et indication au maintien du doigt.
-- La flèche parcourt les cases vides des fractions et des exposants, puis les autres blocs de réponse ; elle est inactive s’il n’en reste aucune.
+- Après un exposant numérique, une opération ou un nouveau facteur reprend la ligne principale ; les chiffres continuent l’exposant pour permettre 10, −12, etc. La flèche permet également de sortir explicitement d’un exposant complété, y compris celui d’une exponentielle composée.
+- La flèche parcourt ensuite les cases vides des fractions et des exposants, puis les autres blocs de réponse ; elle est inactive s’il n’en reste aucune.
 - Bloc repliable « Mes raccourcis » : trois réussites propres gagnent les références de la compétence (2x et 3x² pour les puissances, −1/x², 1/(2√x), eˣ, 1/x, cos(x), −sin(x)). Six touches visibles au maximum, puis « Tous mes raccourcis ».
 - Les raccourcis sont disponibles dans les deux niveaux, sans choix automatique selon la question. Ils s’insèrent au curseur ; un facteur est parenthésé si nécessaire, par exemple 5(2x). La progression existante détermine les touches déjà gagnées, sans nouvelle sauvegarde à migrer.
 - Écriture mathématique Computer Modern avec fractions, primes et radicaux ; aucune dépendance CDN.
@@ -63,6 +64,7 @@ npm run dev
 - `math-display.tsx` : présentation des fractions, racines, puissances et primes.
 - `math-engine.ts` : lecture et comparaison numérique des expressions.
 - `rule-assembly.tsx` : substitution dans les règles du produit et du quotient.
+- `fraction-sources.tsx` : placement de u et u′ dans la fraction de C12.
 - `app.tsx` : navigation, progression, installation et approfondissements.
 - `styles.css` : présentation responsive.
 

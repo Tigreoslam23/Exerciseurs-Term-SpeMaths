@@ -19,7 +19,7 @@ export type Field={label:string;expected:string;form?:"expanded"|"preserve-squar
 export type PlanStep=
  |{kind:"notice";title:string;formula:string;explanation:string}
  |{kind:"identify";title:string;formula:string;items:{label:string;value:string}[];rewrite?:string}
- |{kind:"fill";title:string;fields:Field[];layout?:"sum"|"fraction";before?:string;after?:string;references?:string[];hint:string}
+ |{kind:"fill";title:string;fields:Field[];layout?:"sum"|"fraction";before?:string;after?:string;references?:string[];dragSources?:{label:string;value:string}[];hint:string}
  |{kind:"assemble";title:string;pair:{operation:"product"|"quotient";u:string;v:string;du:string;dv:string}};
 export type LearningPlan={id:string;expression:string;domain:string;final:string;steps:PlanStep[];difficulty:string};
 const r=(lo:number,hi:number)=>lo+Math.floor(Math.random()*(hi-lo+1));
@@ -123,7 +123,7 @@ export function makeLearningPlan(id:string,round=0):LearningPlan{
   else {const types=["inverse","sqrt","exp"];const ts=Array.from({length:2+round%2},()=>reference(types.splice(r(0,types.length-1),1)[0],nz(5)));u={expression:joinTerms(ts.map(t=>t.expression)),derivative:joinTerms(ts.map(t=>t.derivative))};domain="là où u est dérivable et u(x) ≠ 0 ; x > 0 si une racine intervient";}
   expression=`1/(${u.expression})`;final=`-(${u.derivative})/(${u.expression})^2`;
   if(round<5)domain=`pour ${u.expression} ≠ 0`;
-  steps=[identify([{label:"u(x)",value:u.expression}],"(1/u)' = -u'/u^2"),fill("Dérive u.",u.derivative,"Dérive u terme à terme.","u'(x) = "),{kind:"fill",title:"Construis la fraction dérivée.",layout:"fraction",fields:[{label:"Numérateur −u′(x)",expected:`-(${u.derivative})`},{label:"Dénominateur u²(x), non développé",expected:`(${u.expression})^2`,form:"preserve-square"}],before:"f'(x) = ",hint:"Au numérateur, écris −u′. Au dénominateur, conserve u entre parenthèses au carré, sans développer."}];
+  steps=[identify([{label:"u(x)",value:u.expression}],"(1/u)' = -u'/u^2"),fill("Dérive u.",u.derivative,"Dérive u terme à terme.","u'(x) = "),{kind:"fill",title:"Construis la fraction dérivée.",layout:"fraction",fields:[{label:"Numérateur −u′(x)",expected:`-(${u.derivative})`},{label:"Dénominateur u²(x), non développé",expected:`(${u.expression})^2`,form:"preserve-square"}],dragSources:[{label:"u'(x)",value:u.derivative},{label:"u(x)",value:u.expression}],before:"f'(x) = ",hint:"Dépose u′ au numérateur et u au dénominateur. Ajoute toi-même le signe moins devant u′ et le carré autour de u, sans développer le dénominateur."}];
  }
  if(id==="affine-compose"){
   const a=nz(7),b=nz(7),u=poly([b,a]),kind=["power","inverse","exp","sqrt"][round%4],n=r(2,10);

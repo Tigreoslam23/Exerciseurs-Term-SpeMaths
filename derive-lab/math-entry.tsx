@@ -1,7 +1,7 @@
 import * as React from "react";
 import {MathText} from "./math-display";
 import {insertMath,nextEntryTarget,type ReferenceShortcut} from "./keyboard-model";
-export type EntryHandle={insert:(text:string,expression?:boolean)=>void;erase:()=>void;clear:()=>void;next:()=>void;focus:(position?:number)=>void;selection:()=>[number,number];toggleSign:()=>void};
+export type EntryHandle={insert:(text:string,expression?:boolean)=>void;replace:(text:string,position?:number)=>void;erase:()=>void;clear:()=>void;next:()=>void;focus:(position?:number)=>void;selection:()=>[number,number];toggleSign:()=>void};
 export const MathEntry=React.forwardRef<EntryHandle,{value:string;label:string;active:boolean;onChange:(value:string)=>void;onActivate:()=>void;onSubmit:()=>void;onNavigate?:()=>boolean;onCursorChange?:(range:[number,number])=>void}>(({value,label,active,onChange,onActivate,onSubmit,onNavigate,onCursorChange},forwarded)=>{
  const input=React.useRef<HTMLInputElement>(null),selection=React.useRef<[number,number]>([value.length,value.length]);
  const remember=(from:number,to:number)=>{if(selection.current[0]!==from||selection.current[1]!==to){selection.current=[from,to];onCursorChange?.([from,to]);}};
@@ -12,7 +12,7 @@ export const MathEntry=React.forwardRef<EntryHandle,{value:string;label:string;a
  }
  function erase(){const [from,to]=selection.current;const begin=from===to?Math.max(0,from-1):from;onChange(value.slice(0,begin)+value.slice(to));place(begin);}
  function next(){const target=nextEntryTarget([value],0,...selection.current);if(target)place(target.position,target.position+1);}
- React.useImperativeHandle(forwarded,()=>({insert,erase,next,selection:()=>selection.current,clear:()=>{onChange("");place(0);},focus:(position=value.length)=>place(position,value[position]==="□"?position+1:position),toggleSign:()=>{
+ React.useImperativeHandle(forwarded,()=>({insert,replace:(text,position=text.length)=>{onChange(text);place(position,text[position]==="□"?position+1:position);},erase,next,selection:()=>selection.current,clear:()=>{onChange("");place(0);},focus:(position=value.length)=>place(position,value[position]==="□"?position+1:position),toggleSign:()=>{
   const next=value.startsWith("-(")&&value.endsWith(")")?value.slice(2,-1):value.startsWith("-")?value.slice(1):/[+-]/.test(value.slice(1))?"-("+value+")":"-"+value;
   onChange(next);place(next.length);
  }}));
@@ -77,6 +77,6 @@ export function MathKeyboard({entry,onValidate,canValidate,onSign,enabled=true,o
    <button className="primary validate-key" disabled={!canValidate} onClick={onValidate}>Valider <span>→</span></button>
   </fieldset>
   {!enabled&&<p className="keyboard-state">Le clavier s’active lorsqu’une dérivée est à compléter.</p>}
-  <p className="entry-help">Fraction : numérateur d’abord. La flèche passe à la prochaine case vide.</p>
+  <p className="entry-help">Fraction : numérateur d’abord. La flèche sort d’un exposant ou rejoint la prochaine case vide.</p>
  </section>;
 }

@@ -533,3 +533,16 @@ body{margin:0;background:#0b0e17}
 .derive .construction-keys .key{display:flex;align-items:center;justify-content:center;min-width:0;font-size:19px;padding:3px}
 .derive .construction-keys .sign-key{font:15px system-ui}
 @media(max-width:700px){.derive .keyboard-action .action-label{display:none}.derive .keyboard-action svg{width:23px;height:23px}.derive .math-keyboard .keyboard-action{min-height:45px}.derive .math-keyboard .reference-key{height:59px;font-size:23px}.derive .shortcut-bank-toggle{font-size:12px}}
+
+/* C12 : réutiliser u et u′, puis ajouter soi-même le signe et le carré. */
+.derive .inverse-source-tray{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:2px 0 14px}
+.derive .inverse-source-tray.long-expressions{grid-template-columns:minmax(0,1fr)}
+.derive .inverse-source{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;min-height:58px;padding:10px 14px;border:1px solid var(--purple);border-radius:12px;background:var(--bg);color:var(--purple);font-size:22px;touch-action:none;user-select:none;cursor:grab}
+.derive .inverse-source>.math{max-width:100%;overflow-x:auto;padding:3px 0}
+.derive .inverse-source.selected{box-shadow:0 0 0 3px rgba(184,164,255,.2);border-color:var(--green);color:var(--green)}
+.derive .inverse-source .assembly-grip{position:static;flex-shrink:0;font:18px system-ui;opacity:.5}
+.derive .inverse-target{display:inline-flex;align-items:center;flex-direction:column;gap:4px;max-width:100%;border-radius:14px;padding:4px}
+.derive .inverse-target.ready .math-entry{border-style:dashed;border-color:var(--purple)}
+.derive .inverse-target.over{background:var(--panel2);outline:2px solid var(--green);outline-offset:2px}
+.derive .inverse-target .inverse-drop-hint{font:11px system-ui;color:var(--purple);border:1px dashed var(--line);border-radius:7px;min-height:30px;padding:4px 10px}
+@media(max-width:700px){.derive .inverse-source-tray{grid-template-columns:minmax(0,1fr);gap:10px}.derive .inverse-source{font-size:21px;padding:9px 12px}.derive .inverse-target .inverse-drop-hint{min-height:36px}}
