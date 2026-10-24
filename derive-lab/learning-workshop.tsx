@@ -21,7 +21,7 @@ function Identification({step,onComplete,onError}:{step:Extract<PlanStep,{kind:"
  const targetAt=(x:number,y:number)=>{const el=document.elementFromPoint(x,y)?.closest<HTMLElement>('[data-identify-target]');return el&&root.current?.contains(el)?Number(el.dataset.identifyTarget):null;};
  const place=(source:number,target:number)=>{if(placed[target]!==undefined)return;if(sources[source].value!==step.items[target].value){onError();setMessage("Ce bloc ne correspond pas à cette fonction. Choisis une autre carte ou un autre emplacement.");return;}setPlaced(p=>({...p,[target]:source}));setSelected(null);setMessage("Bien placé.");};
  return <div className={"identification-stage"+(step.choices?" reference-identification":"")+(step.assembly?" affine-assembly":"")} ref={root}>
-  <div className="rule-banner"><RuleFormula text={step.formula}/></div>
+  {!step.choices&&<div className="rule-banner"><RuleFormula text={step.formula}/></div>}
   {step.rewrite&&<div className="rewrite"><span>On réécrit :</span><MathText text={"f(x) = "+step.rewrite}/></div>}
   <p>{step.choices?"Choisis les trois blocs utiles parmi les six cartes, puis associe a, g(x) et b.":step.assembly?"Dépose a et g′(ax+b) dans la formule pour obtenir f′(x).":"Glisse chaque bloc sur son étiquette, ou touche le bloc puis sa destination."} Le clic sur une carte puis sa destination fonctionne aussi.</p>
   <div className="identify-sources">{sources.map((item,i)=><button key={i} data-identify-source={i} disabled={used(i)} aria-label={"Sélectionner "+item.value} aria-pressed={selected===i} className={"identify-source"+(selected===i?" selected":"")}
@@ -96,14 +96,14 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
     {headerStage?<> {title}
      {stage.kind==="notice"&&<div className="notice-stage"><div className="rule-banner"><MathText text={stage.formula}/></div><p>{stage.explanation}</p><button className="primary" onClick={()=>advance()}>Utiliser cette règle <span>→</span></button></div>}
      {stage.kind==="identify"&&<Identification key={phase} step={stage} onComplete={()=>advance()} onError={flagError}/>}
-    </>:<><div className="overline">{context.kind==="identify"?"Forme identifiée":"La règle"}</div><div className="rule-banner"><RuleFormula text={context.formula}/></div>{context.kind==="identify"&&<div className="identified-summary">{context.items.map((item,i)=><MathText key={i} text={item.label+" = "+item.value} compact/>)}</div>}</>}
+    </>:<><div className="overline">{context.kind==="identify"?"Forme identifiée":"La règle"}</div>{id!=="affine-compose"&&<div className="rule-banner"><RuleFormula text={context.formula}/></div>}{context.kind==="identify"&&<div className="identified-summary">{context.items.map((item,i)=><MathText key={i} text={item.label+" = "+item.value} compact/>)}</div>}</>}
    </div>}
   </div>
   <div className="learning-steps">
    <div className="stepper" aria-label={"Étape "+(phase+1)+" sur "+plan.steps.length}>{plan.steps.map((_,i)=><span key={i} className={"stepdot "+(finished||i<phase?"past":i===phase?"current":"")}/>)}<span className="stepnumber">{phase+1} / {plan.steps.length}</span></div>
    {finished?<div className="success" role="status"><span className="earned">{exploring?"EXPLORATION":"+ "+earned+" XP"}</span><h2>Dérivée reconstruite.</h2><div className="result"><MathText text={"f'(x) = "+plan.final} compact/></div><p>{dirty.current?"Reprends un autre exemple pour consolider la méthode.":"Toutes les étapes sont justes. Continue ton parcours."}</p><button className="primary" onClick={onNext}>Fonction suivante <span>→</span></button>{unlocks.length>0&&<p className="unlock-message">Nouveaux ateliers : {unlocks.join(", ")}.</p>}</div>:<>
     {!headerStage&&title}
-    {lastWork&&<details className="previous-work"><summary>Voir le calcul précédent</summary><MathText text={lastWork} compact/></details>}
+    {lastWork&&id!=="affine-compose"&&<details className="previous-work"><summary>Voir le calcul précédent</summary><MathText text={lastWork} compact/></details>}
     {!headerStage&&stage.kind==="identify"&&<>{stage.work&&<div className="validated-work">{stage.work.map((text,i)=><MathText key={i} text={text} compact/>)}</div>}<Identification key={phase} step={stage} onComplete={()=>advance()} onError={flagError}/></>}
     {stage.kind==="assemble"&&<RuleAssembly key={phase} pair={stage.pair} onComplete={()=>advance("f'(x) = "+substitutedRule(stage.pair))} onError={flagError}/>}
     {stage.kind==="fill"&&<div className="response-layout">

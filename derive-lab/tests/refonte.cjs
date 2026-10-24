@@ -82,6 +82,7 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
   for(const step of plan.steps){
    if(step.kind==='notice'){assert.ok(q('.function-area .header-context .notice-stage'),'Règle à côté de la fonction');assert.ok(q('.math-keyboard fieldset').disabled);await click(q('.notice-stage .primary'));continue;}
    if(step.kind==='identify'){
+    if(skill.id==='affine-compose'&&!step.assembly)assert.equal(q('.header-context .rule-banner'),null,'La formule de composition ne doit pas apparaître au début');
     assert.ok(q(step.assembly?'.learning-steps .affine-assembly':'.function-area .header-context .identification-stage'),'Identification ou assemblage à sa place');
     if(step.choices){
      assert.equal(d.querySelectorAll('[data-identify-source]').length,6);assert.equal(d.querySelectorAll('[data-identify-target]').length,3);
@@ -128,7 +129,7 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
    await click(q('.math-keyboard .validate-key'));
    assert.equal(q('.learning-steps .feedback'),null,'Validation : '+skill.id+' '+step.title+' '+q('.feedback')?.textContent);
    if(skill.id==='affine-compose'&&step.fields[0].label==='Coefficient a')assert.ok(q('.previous-work [role="math"]').getAttribute('aria-label').startsWith('a = '),'Le coefficient a n’est pas présenté comme f′');
-   if(skill.id==='affine-compose'&&step.fields[0].label==='g′(x)')assert.ok(q('.previous-work [role="math"]').getAttribute('aria-label').startsWith("g'(x) = "),'La dérivée de référence reste notée g′');
+   if(skill.id==='affine-compose'&&step.fields[0].label==='g′(x)'){assert.ok(q('.validated-work [role="math"]').getAttribute('aria-label').startsWith("g'(x) = "),'La dérivée de référence reste visible');assert.equal(q('.previous-work'),null,'Aucun rappel repliable redondant');}
   }
   assert.ok(q('.learning-board .success'),'Parcours terminé : '+skill.id);
   assert.ok(q('.learning-board .result [role="math"]'));
@@ -150,7 +151,7 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
     }
     await click(q('.identification-stage>.primary'));
    }else{
-    if(step.work)assert.ok(q('.validated-work'),'g prime reste visible pendant la substitution');
+    if(step.work){assert.ok(q('.validated-work'),'g prime reste visible pendant la substitution');assert.equal(q('.previous-work'),null,'Pas de bouton Voir le calcul précédent en C13');assert.equal(q('.header-context .rule-banner'),null,'La règle est réservée à la conclusion');}
     const input=q('.math-entry input');
     if(step.fields[0].label==='g′(ax+b)'){
      await paste(input,plan.final);await click(q('.validate-key'));
