@@ -13,25 +13,27 @@ function RuleFormula({text}:{text:string}){
 }
 
 function Identification({step,onComplete,onError}:{step:Extract<PlanStep,{kind:"identify"}>;onComplete:()=>void;onError:()=>void}){
- const [selected,setSelected]=React.useState<number|null>(null),[placed,setPlaced]=React.useState<number[]>([]),[message,setMessage]=React.useState("");
+ const [selected,setSelected]=React.useState<number|null>(null),[placed,setPlaced]=React.useState<Record<number,number>>({}),[message,setMessage]=React.useState("");
  const [ghost,setGhost]=React.useState<{index:number;x:number;y:number}|null>(null),root=React.useRef<HTMLDivElement>(null);
  const drag=React.useRef<{index:number;pointer:number;x:number;y:number;moved:boolean}|null>(null),suppress=React.useRef(false);
+ const sources=step.choices||step.items;
+ const used=(i:number)=>Object.values(placed).includes(i);
  const targetAt=(x:number,y:number)=>{const el=document.elementFromPoint(x,y)?.closest<HTMLElement>('[data-identify-target]');return el&&root.current?.contains(el)?Number(el.dataset.identifyTarget):null;};
- const place=(source:number,target:number)=>{if(placed.includes(target))return;if(source!==target){onError();setMessage("Ce bloc ne correspond pas à cette fonction. Essaie l’autre emplacement.");return;}setPlaced(p=>[...p,target]);setSelected(null);setMessage("Bien placé.");};
- return <div className="identification-stage" ref={root}>
+ const place=(source:number,target:number)=>{if(placed[target]!==undefined)return;if(sources[source].value!==step.items[target].value){onError();setMessage("Ce bloc ne correspond pas à cette fonction. Choisis une autre carte ou un autre emplacement.");return;}setPlaced(p=>({...p,[target]:source}));setSelected(null);setMessage("Bien placé.");};
+ return <div className={"identification-stage"+(step.choices?" reference-identification":"")+(step.assembly?" affine-assembly":"")} ref={root}>
   <div className="rule-banner"><RuleFormula text={step.formula}/></div>
   {step.rewrite&&<div className="rewrite"><span>On réécrit :</span><MathText text={"f(x) = "+step.rewrite}/></div>}
-  <p>Glisse chaque bloc sur son étiquette, ou touche le bloc puis sa destination.</p>
-  <div className="identify-sources">{step.items.map((item,i)=><button key={i} data-identify-source={i} disabled={placed.includes(i)} aria-label={"Sélectionner "+item.value} aria-pressed={selected===i} className={"identify-source"+(selected===i?" selected":"")}
+  <p>{step.choices?"Choisis les trois blocs utiles parmi les six cartes, puis associe a, g(x) et b.":step.assembly?"Dépose a et g′(ax+b) dans la formule pour obtenir f′(x).":"Glisse chaque bloc sur son étiquette, ou touche le bloc puis sa destination."} Le clic sur une carte puis sa destination fonctionne aussi.</p>
+  <div className="identify-sources">{sources.map((item,i)=><button key={i} data-identify-source={i} disabled={used(i)} aria-label={"Sélectionner "+item.value} aria-pressed={selected===i} className={"identify-source"+(selected===i?" selected":"")}
     onDragStart={e=>e.preventDefault()} onPointerDown={e=>{if(!e.isPrimary||e.button!==0)return;suppress.current=false;setSelected(i);drag.current={index:i,pointer:e.pointerId,x:e.clientX,y:e.clientY,moved:false};e.currentTarget.setPointerCapture(e.pointerId);}}
     onPointerMove={e=>{const d=drag.current;if(!d||d.pointer!==e.pointerId)return;if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>6)d.moved=true;if(d.moved)setGhost({index:i,x:e.clientX,y:e.clientY});}}
     onPointerUp={e=>{const d=drag.current;if(!d)return;const target=d.moved?targetAt(e.clientX,e.clientY):null;suppress.current=d.moved;drag.current=null;setGhost(null);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);if(target!==null)place(i,target);}}
     onPointerCancel={()=>{drag.current=null;setGhost(null);}} onLostPointerCapture={()=>{drag.current=null;setGhost(null);}}
-    onClick={()=>{if(suppress.current){suppress.current=false;return;}setSelected(i);}}><MathText text={placed.includes(i)?item.label:item.value} compact/></button>)}</div>
-  <div className="identify-destinations">{step.items.map((item,i)=><button key={i} data-identify-target={i} disabled={placed.includes(i)} aria-label={"Associer "+item.label} className={placed.includes(i)?"filled":""} onClick={()=>selected!==null?place(selected,i):setMessage("Sélectionne d’abord un bloc.")}><MathText text={item.label+(placed.includes(i)?" = "+item.value:"")} compact/>{placed.includes(i)?<span>✓</span>:<small>Déposer ici</small>}</button>)}</div>
+    onClick={()=>{if(suppress.current){suppress.current=false;return;}setSelected(i);}}><MathText text={step.assembly?step.items[i].label+" = "+item.value:item.value} compact/></button>)}</div>
+  <div className="identify-destinations">{step.assembly&&<MathText text="f'(x) = "/>}{step.items.map((item,i)=><React.Fragment key={i}>{step.assembly&&i>0&&<MathText text=" × "/>}<button data-identify-target={i} disabled={placed[i]!==undefined} aria-label={"Associer "+item.label} className={placed[i]!==undefined?"filled":""} onClick={()=>selected!==null?place(selected,i):setMessage("Sélectionne d’abord un bloc.")}><MathText text={placed[i]!==undefined?(step.assembly?"("+item.value+")":item.label+" = "+item.value):item.label+(step.assembly?"":" =")} compact/>{placed[i]!==undefined?<span>✓</span>:<small>Déposer ici</small>}</button></React.Fragment>)}</div>
   <div className="identify-status" role="status">{message}</div>
-  <button className="primary" disabled={placed.length!==step.items.length} onClick={onComplete}>Calculer les dérivées <span>→</span></button>
-  {ghost&&<div className="factor-ghost" style={{left:ghost.x,top:ghost.y}}><MathText text={step.items[ghost.index].value} compact/></div>}
+  <button className="primary" disabled={Object.keys(placed).length!==step.items.length} onClick={onComplete}>{step.assembly?"Conclure et simplifier":"Calculer les dérivées"} <span>→</span></button>
+  {ghost&&<div className="factor-ghost" style={{left:ghost.x,top:ghost.y}}><MathText text={sources[ghost.index].value} compact/></div>}
  </div>;
 }
 
@@ -84,7 +86,7 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
   {entry(i)}{!answers[i]&&<button className="inverse-drop-hint" type="button" aria-label={i===0?"Déposer u prime au numérateur":"Déposer u au dénominateur"} onClick={e=>{e.stopPropagation();if(pickedSource!==null)placeSource(pickedSource,i);else setFeedback("Sélectionne une carte, puis touche sa destination.");}}>Déposer ici</button>}
  </span>:entry(i);
  const context=plan.steps.find((step):step is Extract<PlanStep,{kind:"notice"|"identify"}>=>step.kind==="notice"||step.kind==="identify");
- const headerStage=!finished&&(stage.kind==="notice"||stage.kind==="identify");
+ const headerStage=!finished&&phase===0&&(stage.kind==="notice"||stage.kind==="identify");
  const title=<div className="step-title"><span className="number">{phase+1}</span>{stage.title}</div>;
  return <div className="workshop-layout">
  <section className="panel board learning-board" aria-label="Zone de dérivation">
@@ -102,9 +104,11 @@ export function LearningWorkshop({id,round,earned,exploring,unlocks,onComplete,o
    {finished?<div className="success" role="status"><span className="earned">{exploring?"EXPLORATION":"+ "+earned+" XP"}</span><h2>Dérivée reconstruite.</h2><div className="result"><MathText text={"f'(x) = "+plan.final} compact/></div><p>{dirty.current?"Reprends un autre exemple pour consolider la méthode.":"Toutes les étapes sont justes. Continue ton parcours."}</p><button className="primary" onClick={onNext}>Fonction suivante <span>→</span></button>{unlocks.length>0&&<p className="unlock-message">Nouveaux ateliers : {unlocks.join(", ")}.</p>}</div>:<>
     {!headerStage&&title}
     {lastWork&&<details className="previous-work"><summary>Voir le calcul précédent</summary><MathText text={lastWork} compact/></details>}
+    {!headerStage&&stage.kind==="identify"&&<>{stage.work&&<div className="validated-work">{stage.work.map((text,i)=><MathText key={i} text={text} compact/>)}</div>}<Identification key={phase} step={stage} onComplete={()=>advance()} onError={flagError}/></>}
     {stage.kind==="assemble"&&<RuleAssembly key={phase} pair={stage.pair} onComplete={()=>advance("f'(x) = "+substitutedRule(stage.pair))} onError={flagError}/>}
     {stage.kind==="fill"&&<div className="response-layout">
       <div className="response-content">
+       {stage.work&&<div className="validated-work">{stage.work.map((text,i)=><MathText key={i} text={text} compact/>)}</div>}
        {stage.dragSources&&<><FractionSources items={stage.dragSources} picked={pickedSource} onPick={setPickedSource} onDrop={placeSource} onOver={setDragOver}/><p className="inverse-instruction">Glisse les expressions dans la fraction, ou sélectionne une carte puis sa case. Ajoute toi-même le signe moins et le carré avec le clavier.</p></>}
        {stage.layout==="sum"?<>
         <div className="reference-equation"><MathText text={"f'(x) = "+stage.references!.map(s=>"("+s+")'").join(" + ")} compact/></div>

@@ -18,8 +18,8 @@ export type Term={expression:string;derivative:string};
 export type Field={label:string;expected:string;form?:"expanded"|"preserve-square"|"reduced-poly"};
 export type PlanStep=
  |{kind:"notice";title:string;formula:string;explanation:string}
- |{kind:"identify";title:string;formula:string;items:{label:string;value:string}[];rewrite?:string}
- |{kind:"fill";title:string;fields:Field[];layout?:"sum"|"fraction";before?:string;after?:string;references?:string[];dragSources?:{label:string;value:string}[];hint:string}
+ |{kind:"identify";title:string;formula:string;items:{label:string;value:string}[];rewrite?:string;choices?:{value:string}[];assembly?:boolean;work?:string[]}
+ |{kind:"fill";title:string;fields:Field[];layout?:"sum"|"fraction";before?:string;after?:string;references?:string[];work?:string[];dragSources?:{label:string;value:string}[];hint:string}
  |{kind:"assemble";title:string;pair:{operation:"product"|"quotient";u:string;v:string;du:string;dv:string}};
 export type LearningPlan={id:string;expression:string;domain:string;final:string;steps:PlanStep[];difficulty:string};
 const r=(lo:number,hi:number)=>lo+Math.floor(Math.random()*(hi-lo+1));
@@ -43,7 +43,7 @@ function reference(kind:string,k=1,n=2):Term{
 }
 const fill=(title:string,expected:string,hint:string,before="f'(x) = ",after=""):PlanStep=>({kind:"fill",title,fields:[{label:"Dérivée à compléter",expected}],before,after,hint});
 const notice=(title:string,formula:string,explanation:string):PlanStep=>({kind:"notice",title,formula,explanation});
-const identify=(items:{label:string;value:string}[],formula:string,rewrite?:string):PlanStep=>({kind:"identify",title:"Identifie les éléments de la fonction.",formula,items,rewrite});
+const identify=(items:{label:string;value:string}[],formula:string,rewrite?:string):Extract<PlanStep,{kind:"identify"}>=>({kind:"identify",title:"Identifie les éléments de la fonction.",formula,items,rewrite});
 const coeffSteps=(k:number,base:string,d:string,final:string,rewrite?:string):PlanStep[]=>[
  identify([{label:"k",value:String(k)},{label:"u(x)",value:base}],"(k*u)' = k*u'",rewrite),
  fill("Dérive la fonction de référence.",d,"Dérive uniquement u(x), puis conserve le coefficient.","u'(x) = "),
@@ -131,11 +131,14 @@ export function makeLearningPlan(id:string,round=0):LearningPlan{
   expression=kind==="power"?`(${u})^${n}`:kind==="inverse"?`1/(${u})`:kind==="exp"?`e^(${u})`:`sqrt(${u})`;
   final=kind==="power"?`${n*a}*(${u})^${n-1}`:kind==="inverse"?`${-a}/(${u})^2`:kind==="exp"?`${a}*e^(${u})`:a%2===0?`${a/2}/sqrt(${u})`:`${a}/(2sqrt(${u}))`;
   domain=kind==="inverse"?`pour ${u} ≠ 0`:kind==="sqrt"?`pour ${u} > 0`:"sur ℝ";
+  const substituted=g.derivative.replace(/x/g,"("+u+")");
+  const choices=[{value:String(a)},{value:String(b)},...['inverse','power','sqrt','exp'].map(type=>({value:reference(type,1,n).expression}))];
+  for(let i=choices.length-1;i>0;i--){const j=r(0,i);[choices[i],choices[j]]=[choices[j],choices[i]];}
   steps=[
-   {...identify([{label:"a",value:String(a)},{label:"g(x)",value:g.expression}],"(g(ax+b))' = a*g'(ax+b)","g(ax+b)"),title:"Identifie a et la fonction g."},
-   {kind:"fill",title:"Calcule la dérivée intérieure.",fields:[{label:"Coefficient a",expected:String(a)}],before:`a = (${u})' = `,hint:"La dérivée de ax+b est a. Repère le coefficient de x dans l’expression intérieure."},
+   {...identify([{label:"a",value:String(a)},{label:"g(x)",value:g.expression},{label:"b",value:String(b)}],"(g(ax+b))' = a*g'(ax+b)","g(ax+b)"),choices,title:"Identifie a, b et la fonction g."},
    {kind:"fill",title:"Dérive la fonction de référence g.",fields:[{label:"g′(x)",expected:g.derivative}],before:"g'(x) = ",hint:"Dérive g(x) uniquement, avec la variable x. Tu remplaceras ensuite x par l’expression intérieure."},
-   fill("Applique la règle et simplifie.",final,`Dans g′, remplace x par (${u}), puis multiplie par a = ${a}. Réduis le coefficient de la fraction si nécessaire.`)
+   {kind:"fill",title:"Remplace x par ax+b dans g′.",fields:[{label:"g′(ax+b)",expected:substituted}],before:`g'(${u}) = `,work:["g'(x) = "+g.derivative],hint:`Dans g′(x), remplace chaque x par (${u}). Ne multiplie pas encore par a.`},
+   {kind:"identify",title:"Assemble la dérivée de f.",formula:"(g(ax+b))' = a*g'(ax+b)",assembly:true,items:[{label:"a",value:String(a)},{label:"g'(ax+b)",value:substituted}],work:["g'(x) = "+g.derivative,`g'(${u}) = `+substituted]}
   ];
  }
  if(!steps.length)throw Error("Compétence inconnue : "+id);

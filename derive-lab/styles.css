@@ -546,3 +546,18 @@ body{margin:0;background:#0b0e17}
 .derive .inverse-target.over{background:var(--panel2);outline:2px solid var(--green);outline-offset:2px}
 .derive .inverse-target .inverse-drop-hint{font:11px system-ui;color:var(--purple);border:1px dashed var(--line);border-radius:7px;min-height:30px;padding:4px 10px}
 @media(max-width:700px){.derive .inverse-source-tray{grid-template-columns:minmax(0,1fr);gap:10px}.derive .inverse-source{font-size:21px;padding:9px 12px}.derive .inverse-target .inverse-drop-hint{min-height:36px}}
+
+/* C13 : six cartes mélangées et trois destinations centrées. */
+.derive .reference-identification .identify-sources{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+.derive .reference-identification .identify-destinations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:90%;margin:14px auto 10px;gap:7px}
+.derive .header-context .reference-identification .identify-source{min-width:0;padding:6px 2px;font-size:20px;min-height:62px;flex-wrap:nowrap}
+.derive .header-context .reference-identification .identify-destinations>button{min-width:0;padding:7px 3px;min-height:65px;font-size:20px}
+.derive .reference-identification .identify-source .math{white-space:nowrap}
+.derive .validated-work{display:flex;flex-direction:column;gap:14px;font-size:var(--work-math-size);color:var(--green);margin:18px 4px 24px;overflow-x:auto;padding:5px 0}
+.derive .affine-assembly .identify-sources{display:grid;grid-template-columns:minmax(0,.45fr) minmax(0,1fr)}
+.derive .affine-assembly .identify-source{font-size:25px;min-width:0;overflow-x:auto}
+.derive .affine-assembly .identify-destinations{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;font-size:var(--work-math-size);gap:10px;margin:25px 0}
+.derive .affine-assembly .identify-destinations>button{flex:0 1 auto;min-width:70px;max-width:100%;font-size:var(--work-math-size);overflow-x:auto;min-height:64px}
+.derive .affine-assembly .identify-destinations>button:last-child{min-width:150px}
+.derive .affine-assembly .rule-banner{font-size:25px}
+@media(max-width:400px){.derive .header-context .reference-identification .identify-source{font-size:18px}.derive .reference-identification .identify-sources{gap:4px}.derive .header-context .reference-identification .identify-destinations>button{font-size:18px}.derive .affine-assembly .identify-source{font-size:21px}}

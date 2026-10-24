@@ -18,7 +18,7 @@ Jouer : https://tigreoslam23.github.io/Exerciseurs-Term-SpeMaths/derive-lab/
 10. Produit : identification, dérivées, substitution par glisser-déposer, simplification.
 11. Quotient : homographies non constantes, puis fractions de polynômes de degrés différents dont le degré maximal vaut 3.
 12. Inverse d’une fonction u : u polynomiale de degré 1 à 5 ou combinaison de références ; calcul de u′, puis glisser-déposer de u′ et u dans les deux champs. Le signe moins et le carré sont ajoutés par l’élève au clavier, sans développer le dénominateur. Le clic carte puis destination fonctionne aussi.
-13. Composée affine : puissances, inverse, racine et exponentielle de ax+b.
+13. Composée affine : six cartes mélangées (a, b et quatre références) pour identifier a, g et b ; calcul de g′(x), puis de g′(ax+b) avec la dérivée précédente visible ; assemblage de a et g′(ax+b) par glisser-déposer ou clic avant la conclusion simplifiée.
 
 Les approfondissements de Terminale sont conservés dans leur onglet.
 Les exposants, les familles des sommes et les degrés des quotients progressent avec les exercices terminés. L’exploration libre fait aussi avancer cette difficulté pendant la session, sans modifier les XP.

@@ -28,9 +28,16 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
   if(skill.id==='inverse'&&round===0)assert.equal(plan.expression,'2/x');
   if(skill.id==='affine-compose'){
    assert.equal(plan.steps[0].kind,'identify');
-   assert.deepEqual(plan.steps[0].items.map(item=>item.label),['a','g(x)']);
+   assert.deepEqual(plan.steps[0].items.map(item=>item.label),['a','g(x)','b']);
    assert.equal(plan.steps[0].formula,"(g(ax+b))' = a*g'(ax+b)");
-   const g=plan.steps[0].items[1].value,dg=plan.steps[2];
+   const identification=plan.steps[0],g=identification.items[1].value,dg=plan.steps[1];
+   assert.equal(identification.choices.length,6);
+   for(const item of identification.items)assert.ok(identification.choices.some(choice=>choice.value===item.value));
+   for(const family of ['1/x','sqrt(x)','e^x'])assert.ok(identification.choices.some(choice=>choice.value===family));
+   assert.ok(identification.choices.some(choice=>/^x\^\d+$/.test(choice.value)));
+   assert.equal(plan.steps[3].assembly,true);
+   assert.equal(plan.steps[2].work[0],"g'(x) = "+dg.fields[0].expected);
+   assert.ok(sameMath(plan.steps[3].items[0].value+'*('+plan.steps[2].fields[0].expected+')',plan.final),'La formule assemblée correspond à la dérivée finale');
    assert.equal(dg.before,"g'(x) = ");
    for(const x of [.29,1.13,2.43]){
     const h=1e-5,actual=(mathValue(g,x+h)-mathValue(g,x-h))/(2*h),expected=mathValue(dg.fields[0].expected,x);
@@ -42,9 +49,10 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
  const draws=[.1,0,.1,.75,.6];Math.random=()=>draws.shift()??.5;
  const negativeComposition=makeLearningPlan('affine-compose',0);Math.random=systemRandom;
  assert.equal(negativeComposition.expression,'(-x-6)^7');
- assert.equal(negativeComposition.steps[1].before,"a = (-x-6)' = ");
- assert.equal(negativeComposition.steps[1].fields[0].expected,'-1');
- assert.equal(negativeComposition.steps[2].fields[0].expected,'7*x^6');
+ assert.equal(negativeComposition.steps[0].items[0].value,'-1');
+ assert.equal(negativeComposition.steps[0].items[2].value,'-6');
+ assert.equal(negativeComposition.steps[1].fields[0].expected,'7*x^6');
+ assert.ok(sameMath(negativeComposition.steps[2].fields[0].expected,'7*(-x-6)^6'));
  assert.ok(sameMath(negativeComposition.final,'-7*(-x-6)^6'));
  let source=fs.readFileSync(path.join(root,'app.tsx'),'utf8').split('const rootElement=document.getElementById("root");')[0];
  await build({stdin:{contents:source+'\nexport {readProgress,SKILLS};',resolveDir:root,loader:'tsx'},outfile:path.join(out,'progress.cjs'),bundle:true,platform:'node',format:'cjs'});
@@ -74,8 +82,17 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
   for(const step of plan.steps){
    if(step.kind==='notice'){assert.ok(q('.function-area .header-context .notice-stage'),'Règle à côté de la fonction');assert.ok(q('.math-keyboard fieldset').disabled);await click(q('.notice-stage .primary'));continue;}
    if(step.kind==='identify'){
-    assert.ok(q('.function-area .header-context .identification-stage'),'Identification remontée dans l’en-tête');
-    for(let i=0;i<step.items.length;i++){await click(q('[data-identify-source="'+i+'"]'));await click(q('[data-identify-target="'+i+'"]'));}
+    assert.ok(q(step.assembly?'.learning-steps .affine-assembly':'.function-area .header-context .identification-stage'),'Identification ou assemblage à sa place');
+    if(step.choices){
+     assert.equal(d.querySelectorAll('[data-identify-source]').length,6);assert.equal(d.querySelectorAll('[data-identify-target]').length,3);
+     const distractor=step.choices.findIndex(choice=>!step.items.some(item=>item.value===choice.value));
+     await click(q('[data-identify-source="'+distractor+'"]'));await click(q('[data-identify-target="1"]'));
+     assert.ok(q('.identification-stage>.primary').disabled,'Une référence incorrecte ne valide pas g');
+    }
+    for(let i=0;i<step.items.length;i++){
+     const source=step.choices?step.choices.findIndex((choice,j)=>choice.value===step.items[i].value&&!q('[data-identify-source="'+j+'"]').disabled):i;
+     await click(q('[data-identify-source="'+source+'"]'));await click(q('[data-identify-target="'+i+'"]'));
+    }
     await click(q('.identification-stage>.primary'));continue;
    }
    if(step.kind==='assemble'){
@@ -115,6 +132,35 @@ const tick=()=>new Promise(resolve=>setTimeout(resolve,20));
   }
   assert.ok(q('.learning-board .success'),'Parcours terminé : '+skill.id);
   assert.ok(q('.learning-board .result [role="math"]'));
+ }
+ // Les trois autres familles de C13 suivent le même protocole complet.
+ for(let round=1;round<4;round++){
+  await click([...d.querySelectorAll('.success button')].find(button=>button.textContent.includes('Fonction suivante')));
+  const previous=Math.random;Math.random=()=>.63;const plan=makeLearningPlan('affine-compose',round);Math.random=previous;
+  for(const step of plan.steps){
+   if(step.kind==='identify'){
+    if(step.assembly){
+     assert.equal(d.querySelectorAll('.validated-work [role="math"]').length,2,'Les deux dérivées restent visibles à l’assemblage');
+     await click(q('[data-identify-source="0"]'));await click(q('[data-identify-target="1"]'));
+     assert.ok(q('.affine-assembly>.primary').disabled,'Les facteurs doivent être identifiés correctement');
+    }
+    for(let target=0;target<step.items.length;target++){
+     const source=step.choices?step.choices.findIndex((choice,i)=>choice.value===step.items[target].value&&!q('[data-identify-source="'+i+'"]').disabled):target;
+     await click(q('[data-identify-source="'+source+'"]'));await click(q('[data-identify-target="'+target+'"]'));
+    }
+    await click(q('.identification-stage>.primary'));
+   }else{
+    if(step.work)assert.ok(q('.validated-work'),'g prime reste visible pendant la substitution');
+    const input=q('.math-entry input');
+    if(step.fields[0].label==='g′(ax+b)'){
+     await paste(input,plan.final);await click(q('.validate-key'));
+     assert.ok(q('.feedback'),'Multiplier trop tôt par a ne valide pas la substitution');
+     await click(q('[aria-label="Vider la case"]'));
+    }
+    await paste(input,step.fields[0].expected);await click(q('.validate-key'));assert.equal(q('.learning-steps .feedback'),null);
+   }
+  }
+  assert.ok(q('.success'),'C13 terminée pour la famille '+round);
  }
  dom.window.close();console.log('Les 13 parcours complets, champs simultanés, fractions, racines, signes et contrôles d’interface sont validés.');
  fs.rmSync(out,{recursive:true,force:true});
