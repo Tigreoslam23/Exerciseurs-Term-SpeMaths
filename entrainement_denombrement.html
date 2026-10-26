@@ -82,6 +82,40 @@
     .suit-panel{display:flex;gap:8px;align-items:center;font-size:2.5rem;color:#f5f8fd}
     .suit-panel .red{color:#fa7185}
     math{font-family:"Cambria Math","STIX Two Math","DejaVu Serif",serif;vertical-align:middle;font-size:1.08em}
+
+    /* Calculatrice intégrée, utilisable sans connexion */
+    .calc-toggle{margin-left:auto;white-space:nowrap}
+    .calc-dialog{width:min(580px,calc(100vw - 24px));max-height:min(92vh,920px);overflow:auto;color:var(--text);background:#10243d;border:1px solid #537292;border-radius:22px;padding:20px;box-shadow:0 25px 75px #020914}
+    .calc-dialog::backdrop{background:rgba(2,9,20,.82)}
+    .calc-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .calc-head h2{margin:0}
+    .calc-close{background:#263e58;border:1px solid #506f90;color:#fff;border-radius:10px;min-width:42px;min-height:42px;font-size:1.5rem}
+    .calc-help{color:var(--muted);font-size:.9rem;margin:12px 0}
+    .calc-display{padding:12px;min-height:98px;overflow-x:auto;border-radius:13px;border:1px solid #537292;background:#06182c}
+    .calc-expression{display:inline-flex;align-items:center;flex-wrap:nowrap;gap:5px;min-height:50px;vertical-align:middle}
+    .calc-op{color:var(--cyan);font-size:1.5rem;font-weight:800;margin:0 3px}
+    .calc-slot{display:inline-grid;place-items:center;min-width:47px;min-height:45px;padding:3px 7px;border:2px dashed #7f9fbd;border-radius:7px;background:#142b49;color:#fff;font-weight:800;font-size:1.15rem;white-space:nowrap}
+    .calc-slot.selected{border-style:solid;border-color:var(--yellow);box-shadow:0 0 0 2px rgba(255,211,105,.18)}
+    .calc-factorial,.calc-power{display:inline-flex;align-items:center;gap:2px}
+    .calc-factorial-mark{font-size:1.4rem;font-weight:800}
+    .calc-frac{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;min-width:48px}
+    .calc-frac-top,.calc-frac-bottom{display:flex;align-items:center;justify-content:center;padding:3px 5px}
+    .calc-frac-top{border-bottom:2px solid #d3e8fa}
+    .calc-power sup{display:inline-flex;align-items:start;position:relative;top:-.65em}
+    .calc-power sup .calc-slot{min-width:39px;min-height:36px;font-size:.96rem}
+    .calc-result{min-height:53px;padding:12px;margin:12px 0;border-radius:12px;background:#0a1d34;color:var(--green);font-weight:850;overflow-wrap:anywhere}
+    .calc-result.error{color:var(--yellow)}
+    .calc-keypad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    .calc-keypad button{min-height:50px;padding:5px;border:1px solid #527494;border-radius:11px;background:#203e5d;color:#f4f8ff;font-size:1.22rem;font-weight:800}
+    .calc-keypad button:hover{background:#315778}
+    .calc-keypad .calc-action{background:#32426b}
+    .calc-keypad .calc-equals{background:linear-gradient(135deg,var(--cyan),var(--green));color:#061729}
+    .calc-keypad .calc-return{font-size:.94rem}
+    .calc-mini-square{display:inline-block;width:17px;height:19px;border:2px solid currentColor;border-radius:3px;vertical-align:middle}
+    .calc-mini-fraction{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1}
+    .calc-mini-fraction .calc-mini-square:first-child{border-bottom:2px solid currentColor;padding-bottom:2px;margin-bottom:3px}
+    .calc-keypad sup{font-size:.75em}
+    @media(max-width:540px){header{flex-wrap:wrap}.calc-toggle{margin-left:68px}.calc-dialog{padding:14px}.calc-keypad{gap:6px}.calc-keypad button{min-height:48px}}
     @media(max-width:720px){.level-grid{grid-template-columns:1fr}.level-card{min-height:0}.answer-row{flex-direction:column}.actions .button{width:100%}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
@@ -91,6 +125,8 @@
     <header>
       <div class="logo" aria-hidden="true">N</div>
       <div><h1>Nexus Arena · Défis de dénombrement</h1><p class="subtitle">Réponds par un nombre entier · défis renouvelés à chaque partie</p></div>
+
+      <button id="openCalculator" class="button secondary calc-toggle" type="button" aria-haspopup="dialog" aria-controls="calculatorDialog">▦ Calculatrice</button>
     </header>
     <section id="menuView" class="panel">
       <h2>Choisis ton niveau</h2>
@@ -127,6 +163,23 @@
     </section>
     <p class="privacy">Cette page fonctionne hors connexion. Les réponses et les scores ne sont pas envoyés.</p>
   </main>
+
+  <dialog id="calculatorDialog" class="calc-dialog" aria-labelledby="calcTitle">
+    <div class="calc-head"><h2 id="calcTitle">Calculatrice</h2><button id="closeCalculator" class="calc-close" type="button" aria-label="Fermer la calculatrice">×</button></div>
+    <p class="calc-help">Clique dans un carré pour le remplir. Pour calculer dans un bloc, sélectionne son carré. « Calcul entier » revient à l’expression principale.</p>
+    <div id="calcExpression" class="calc-display" role="group" aria-label="Expression à calculer"></div>
+    <div id="calcResult" class="calc-result" role="status" aria-live="polite">Saisis un nombre ou choisis une opération.</div>
+    <div id="calcKeypad" class="calc-keypad" role="group" aria-label="Touches de la calculatrice">
+      <button type="button" data-calc="7">7</button><button type="button" data-calc="8">8</button><button type="button" data-calc="9">9</button><button type="button" data-calc="+">+</button>
+      <button type="button" data-calc="4">4</button><button type="button" data-calc="5">5</button><button type="button" data-calc="6">6</button><button type="button" data-calc="-">−</button>
+      <button type="button" data-calc="1">1</button><button type="button" data-calc="2">2</button><button type="button" data-calc="3">3</button><button type="button" data-calc="*">×</button>
+      <button type="button" data-calc="0">0</button><button type="button" data-calc="back" aria-label="Effacer le dernier chiffre">⌫</button><button type="button" data-calc="clear" aria-label="Effacer tout">C</button><button class="calc-equals" type="button" data-calc="equals">=</button>
+      <button class="calc-action" type="button" data-calc="factorial" aria-label="Factorielle : carré suivi de point d’exclamation"><span class="calc-mini-square"></span>!</button>
+      <button class="calc-action" type="button" data-calc="fraction" aria-label="Quotient : carré au numérateur sur carré au dénominateur"><span class="calc-mini-fraction"><span class="calc-mini-square"></span><span class="calc-mini-square"></span></span></button>
+      <button class="calc-action" type="button" data-calc="power" aria-label="Puissance : carré à la puissance carré"><span class="calc-mini-square"></span><sup><span class="calc-mini-square"></span></sup></button>
+      <button class="calc-action calc-return" type="button" data-calc="root">↖ Calcul entier</button>
+    </div>
+  </dialog>
   <script>
     "use strict";
     const $ = id => document.getElementById(id);
@@ -450,6 +503,202 @@
     $("leaveButton").addEventListener("click",()=>showView("menu"));
     $("againButton").addEventListener("click",()=>start(state.level));
     $("homeButton").addEventListener("click",()=>showView("menu"));
+
+    // Module autonome : l'expression et le résultat ne modifient jamais la réponse au QCM.
+    const calcBox=$("calculatorDialog");
+    const calcNumber=(value="")=>({kind:"number",value});
+    const calcExpr=(value="")=>({parts:[calcNumber(value)]});
+    let calcRoot=calcExpr();
+    let calcSelected={expr:calcRoot,node:calcRoot.parts[0]};
+    function calcSay(message,error=false){
+      const output=$("calcResult");
+      output.textContent=message;
+      output.classList.toggle("error",error);
+    }
+    function calcRenderExpr(expression){
+      const line=document.createElement("span");
+      line.className="calc-expression";
+      expression.parts.forEach(item=>{
+        if(item.kind==="op"){
+          const label=document.createElement("span");
+          label.className="calc-op";label.textContent=item.value==="*"?"×":item.value==="-"?"−":"+";
+          line.appendChild(label);
+        }else line.appendChild(calcRenderNode(item,expression));
+      });
+      return line;
+    }
+    function calcRenderNode(item,expression){
+      if(item.kind==="number"){
+        const button=document.createElement("button");
+        button.type="button";
+        button.className="calc-slot"+(calcSelected.node===item?" selected":"");
+        button.textContent=item.value||"□";
+        button.setAttribute("aria-label",item.value?"Nombre "+item.value:"Carré vide, saisir un nombre");
+        button.setAttribute("aria-pressed",String(calcSelected.node===item));
+        button.addEventListener("click",()=>{calcSelected={expr:expression,node:item};calcDraw()});
+        return button;
+      }
+      const box=document.createElement("span");
+      box.className=item.kind==="fraction"?"calc-frac":item.kind==="power"?"calc-power":"calc-factorial";
+      if(item.kind==="factorial"){
+        box.append(calcRenderExpr(item.arg));
+        const mark=document.createElement("span");mark.className="calc-factorial-mark";mark.textContent="!";
+        box.appendChild(mark);
+      }else if(item.kind==="fraction"){
+        for(const [className,child] of [["calc-frac-top",item.top],["calc-frac-bottom",item.bottom]]){
+          const part=document.createElement("span");part.className=className;part.appendChild(calcRenderExpr(child));box.appendChild(part);
+        }
+      }else{
+        box.append(calcRenderExpr(item.base));
+        const power=document.createElement("sup");power.appendChild(calcRenderExpr(item.exponent));box.appendChild(power);
+      }
+      return box;
+    }
+    function calcDraw(){$("calcExpression").replaceChildren(calcRenderExpr(calcRoot))}
+    function calcReset(){
+      calcRoot=calcExpr();
+      calcSelected={expr:calcRoot,node:calcRoot.parts[0]};
+      calcDraw();calcSay("Saisis un nombre ou choisis une opération.");
+    }
+    function calcDigit(digit){
+      const node=calcSelected.node;
+      if(!node){calcSay("Choisis une opération, puis remplis le nouveau carré.",true);return}
+      if(node.value.replace("-","").length>=12){calcSay("12 chiffres maximum dans chaque carré.",true);return}
+      node.value=node.value==="0"?digit:node.value+digit;
+      calcDraw();calcSay("Appuie sur = pour voir le résultat.");
+    }
+    function calcTemplate(kind){
+      const expression=calcSelected.expr,node=calcSelected.node;
+      const index=node?expression.parts.indexOf(node):expression.parts.length-1;
+      if(index<0)return;
+      const target=expression.parts[index];
+      const initial=target.kind==="number"?target.value:"";
+      const operand=target.kind==="number"?calcExpr(initial):{parts:[target]};
+      let replacement,first;
+      if(kind==="factorial"){
+        replacement={kind,arg:operand};
+        first=operand;
+      }else if(kind==="fraction"){
+        replacement={kind,top:operand,bottom:calcExpr()};
+        first=initial||target.kind!=="number"?replacement.bottom:replacement.top;
+      }else{
+        replacement={kind,base:operand,exponent:calcExpr()};
+        first=initial||target.kind!=="number"?replacement.exponent:replacement.base;
+      }
+      expression.parts[index]=replacement;
+      calcSelected={expr:first,node:first.parts[0]};
+      calcDraw();calcSay("Remplis le carré sélectionné.");
+    }
+    function calcOperator(symbol){
+      const expr=calcSelected.expr;
+      const last=expr.parts[expr.parts.length-1];
+      if(expr.parts.length===1&&last.kind==="number"&&last.value===""&&symbol==="-"){
+        last.value="-";calcDraw();return;
+      }
+      if(last.kind==="number"&&(!last.value||last.value==="-")){
+        calcSay("Remplis d’abord le carré vide.",true);return;
+      }
+      if(expr.parts.length>=39){calcSay("Expression trop longue : lance le calcul ou efface tout.",true);return}
+      const next=calcNumber();
+      expr.parts.push({kind:"op",value:symbol},next);
+      calcSelected={expr,node:next};
+      calcDraw();calcSay("Continue le calcul.");
+    }
+    function calcBack(){
+      const node=calcSelected.node;
+      if(!node){calcSay("Clique un carré pour effacer un chiffre.",true);return}
+      node.value=node.value.slice(0,-1);
+      if(calcSelected.expr.parts.length>1&&!node.value&&calcSelected.expr.parts.at(-1)===node){
+        calcSelected.expr.parts.splice(-2);
+        const last=calcSelected.expr.parts.at(-1);
+        calcSelected.node=last.kind==="number"?last:null;
+      }
+      calcDraw();calcSay("Dernière saisie effacée.");
+    }
+    const calcAbs=n=>n<0n?-n:n;
+    function calcGcd(a,b){
+      a=calcAbs(a);b=calcAbs(b);
+      while(b!==0n){const c=a%b;a=b;b=c}
+      return a;
+    }
+    function calcRat(top,bottom=1n){
+      if(bottom===0n)throw Error("La division par zéro est impossible.");
+      if(bottom<0n){top=-top;bottom=-bottom}
+      const divisor=calcGcd(top,bottom);
+      return {top:top/divisor,bottom:bottom/divisor};
+    }
+    const calcAdd=(a,b)=>calcRat(a.top*b.bottom+b.top*a.bottom,a.bottom*b.bottom);
+    const calcTimes=(a,b)=>calcRat(a.top*b.top,a.bottom*b.bottom);
+    function calcReadNode(item){
+      if(item.kind==="number"){
+        if(!/^-?\d+$/.test(item.value))throw Error("Remplis tous les carrés avant de calculer.");
+        return calcRat(BigInt(item.value));
+      }
+      if(item.kind==="fraction"){
+        const a=calcRead(item.top),b=calcRead(item.bottom);
+        return calcRat(a.top*b.bottom,a.bottom*b.top);
+      }
+      if(item.kind==="factorial"){
+        const a=calcRead(item.arg);
+        if(a.bottom!==1n||a.top<0n)throw Error("La factorielle demande un entier positif ou nul.");
+        if(a.top>100n)throw Error("La calculatrice accepte les factorielles jusqu’à 100!.");
+        let product=1n;
+        for(let k=2n;k<=a.top;k++)product*=k;
+        return calcRat(product);
+      }
+      const base=calcRead(item.base),power=calcRead(item.exponent);
+      if(power.bottom!==1n||power.top< -100n||power.top>100n)throw Error("L’exposant doit être un entier entre −100 et 100.");
+      if(base.top===0n&&power.top===0n)throw Error("0 à la puissance 0 n’est pas défini ici.");
+      if(power.top<0n)return calcRat(base.bottom**(-power.top),base.top**(-power.top));
+      return calcRat(base.top**power.top,base.bottom**power.top);
+    }
+    function calcRead(expr){
+      const parts=expr.parts;
+      let sum=calcRat(0n),term=calcReadNode(parts[0]),sign=1n;
+      for(let i=1;i<parts.length;i+=2){
+        const next=calcReadNode(parts[i+1]),op=parts[i].value;
+        if(op==="*")term=calcTimes(term,next);
+        else{
+          sum=calcAdd(sum,calcRat(sign*term.top,term.bottom));
+          term=next;sign=op==="+"?1n:-1n;
+        }
+      }
+      return calcAdd(sum,calcRat(sign*term.top,term.bottom));
+    }
+    function calcGrouped(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g," ")}
+    function calcEquals(){
+      try{
+        const result=calcRead(calcRoot);
+        const answer=calcGrouped(result.top)+(result.bottom===1n?"":" / "+calcGrouped(result.bottom));
+        if(answer.length>2500)throw Error("Résultat trop long à afficher.");
+        calcSay("= "+answer);
+      }catch(error){calcSay(error.message,true)}
+    }
+    $("openCalculator").addEventListener("click",()=>{calcDraw();calcBox.showModal()});
+    $("closeCalculator").addEventListener("click",()=>calcBox.close());
+    $("calcKeypad").addEventListener("click",event=>{
+      const key=event.target.closest("button[data-calc]")?.dataset.calc;
+      if(!key)return;
+      if(/^\d$/.test(key))calcDigit(key);
+      else if(key==="factorial"||key==="fraction"||key==="power")calcTemplate(key);
+      else if(["+","-","*"].includes(key))calcOperator(key);
+      else if(key==="back")calcBack();
+      else if(key==="clear")calcReset();
+      else if(key==="root"){
+        const last=calcRoot.parts.at(-1);
+        calcSelected={expr:calcRoot,node:last.kind==="number"?last:null};
+        calcDraw();calcSay("Sélection du calcul entier. Choisis une opération pour continuer.");
+      }else if(key==="equals")calcEquals();
+    });
+    calcBox.addEventListener("keydown",event=>{
+      if(event.altKey||event.ctrlKey||event.metaKey||event.key==="Escape")return;
+      const key=event.key;
+      if(/^\d$/.test(key)){event.preventDefault();calcDigit(key)}
+      else if(["+","-","*"].includes(key)){event.preventDefault();calcOperator(key)}
+      else if(key==="Backspace"){event.preventDefault();calcBack()}
+      else if(key==="="||key==="Enter"){event.preventDefault();calcEquals()}
+    });
+    calcDraw();
   </script>
 </body>
 </html>
