@@ -84,7 +84,8 @@
     math{font-family:"Cambria Math","STIX Two Math","DejaVu Serif",serif;vertical-align:middle;font-size:1.08em}
 
     /* Calculatrice intégrée, utilisable sans connexion */
-    .calc-toggle{margin-left:auto;white-space:nowrap}
+    .calc-toggle{white-space:nowrap;flex:0 0 auto}
+    .answer-row .calc-toggle{padding:10px 12px;font-size:.95rem}
     .calc-dialog{width:min(580px,calc(100vw - 24px));max-height:min(92vh,920px);overflow:auto;color:var(--text);background:#10243d;border:1px solid #537292;border-radius:22px;padding:20px;box-shadow:0 25px 75px #020914}
     .calc-dialog::backdrop{background:rgba(2,9,20,.82)}
     .calc-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -96,7 +97,7 @@
     .calc-op{color:var(--cyan);font-size:1.5rem;font-weight:800;margin:0 3px}
     .calc-slot{display:inline-grid;place-items:center;min-width:47px;min-height:45px;padding:3px 7px;border:2px dashed #7f9fbd;border-radius:7px;background:#142b49;color:#fff;font-weight:800;font-size:1.15rem;white-space:nowrap}
     .calc-slot.selected{border-style:solid;border-color:var(--yellow);box-shadow:0 0 0 2px rgba(255,211,105,.18)}
-    .calc-factorial,.calc-power{display:inline-flex;align-items:center;gap:2px}
+    .calc-factorial,.calc-power,.calc-product{display:inline-flex;align-items:center;gap:2px}
     .calc-factorial-mark{font-size:1.4rem;font-weight:800}
     .calc-frac{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;min-width:48px}
     .calc-frac-top,.calc-frac-bottom{display:flex;align-items:center;justify-content:center;padding:3px 5px}
@@ -110,13 +111,13 @@
     .calc-keypad button:hover{background:#315778}
     .calc-keypad .calc-action{background:#32426b}
     .calc-keypad .calc-equals{background:linear-gradient(135deg,var(--cyan),var(--green));color:#061729}
-    .calc-keypad .calc-return{font-size:.94rem}
+    .calc-keypad .calc-return{font-size:.94rem;grid-column:1/-1}
     .calc-mini-square{display:inline-block;width:17px;height:19px;border:2px solid currentColor;border-radius:3px;vertical-align:middle}
     .calc-mini-fraction{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1}
     .calc-mini-fraction .calc-mini-square:first-child{border-bottom:2px solid currentColor;padding-bottom:2px;margin-bottom:3px}
     .calc-keypad sup{font-size:.75em}
-    @media(max-width:540px){header{flex-wrap:wrap}.calc-toggle{margin-left:68px}.calc-dialog{padding:14px}.calc-keypad{gap:6px}.calc-keypad button{min-height:48px}}
-    @media(max-width:720px){.level-grid{grid-template-columns:1fr}.level-card{min-height:0}.answer-row{flex-direction:column}.actions .button{width:100%}}
+    @media(max-width:540px){.calc-dialog{padding:14px}.calc-keypad{gap:6px}.calc-keypad button{min-height:48px}}
+    @media(max-width:720px){.level-grid{grid-template-columns:1fr}.level-card{min-height:0}.answer-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.answer-row input{grid-column:1/-1}.answer-row .button{width:100%}.actions .button{width:100%}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
 </head>
@@ -126,7 +127,6 @@
       <div class="logo" aria-hidden="true">N</div>
       <div><h1>Nexus Arena · Défis de dénombrement</h1><p class="subtitle">Réponds par un nombre entier · défis renouvelés à chaque partie</p></div>
 
-      <button id="openCalculator" class="button secondary calc-toggle" type="button" aria-haspopup="dialog" aria-controls="calculatorDialog">▦ Calculatrice</button>
     </header>
     <section id="menuView" class="panel">
       <h2>Choisis ton niveau</h2>
@@ -151,7 +151,7 @@
       <h2 id="questionText" class="question"></h2>
       <form id="answerForm" novalidate>
         <label class="answer-label" for="answerInput">Ta réponse</label>
-        <div class="answer-row"><input id="answerInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Écris un nombre entier" aria-describedby="feedback"><button id="checkButton" class="button" type="submit">Valider</button></div>
+        <div class="answer-row"><input id="answerInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Écris un nombre entier" aria-describedby="feedback"><button id="openCalculator" class="button secondary calc-toggle" type="button" aria-haspopup="dialog" aria-controls="calculatorDialog">▦ Calculatrice</button><button id="checkButton" class="button" type="submit">Valider</button></div>
       </form>
       <div id="feedback" class="feedback" role="status" aria-live="polite" hidden><h3 id="feedbackTitle"></h3><p id="feedbackText"></p></div>
       <div class="actions"><button id="leaveButton" class="button secondary" type="button">Retour au menu</button><button id="skipButton" class="skip" type="button">Voir la solution · 0 point</button><button id="nextButton" class="button" type="button" hidden>Question suivante</button></div>
@@ -177,6 +177,7 @@
       <button class="calc-action" type="button" data-calc="factorial" aria-label="Factorielle : carré suivi de point d’exclamation"><span class="calc-mini-square"></span>!</button>
       <button class="calc-action" type="button" data-calc="fraction" aria-label="Quotient : carré au numérateur sur carré au dénominateur"><span class="calc-mini-fraction"><span class="calc-mini-square"></span><span class="calc-mini-square"></span></span></button>
       <button class="calc-action" type="button" data-calc="power" aria-label="Puissance : carré à la puissance carré"><span class="calc-mini-square"></span><sup><span class="calc-mini-square"></span></sup></button>
+      <button class="calc-action" type="button" data-calc="product" aria-label="Produit : carré fois carré"><span class="calc-mini-square"></span> × <span class="calc-mini-square"></span></button>
       <button class="calc-action calc-return" type="button" data-calc="root">↖ Calcul entier</button>
     </div>
   </dialog>
@@ -539,7 +540,7 @@
         return button;
       }
       const box=document.createElement("span");
-      box.className=item.kind==="fraction"?"calc-frac":item.kind==="power"?"calc-power":"calc-factorial";
+      box.className=item.kind==="fraction"?"calc-frac":item.kind==="power"?"calc-power":item.kind==="product"?"calc-product":"calc-factorial";
       if(item.kind==="factorial"){
         box.append(calcRenderExpr(item.arg));
         const mark=document.createElement("span");mark.className="calc-factorial-mark";mark.textContent="!";
@@ -548,6 +549,9 @@
         for(const [className,child] of [["calc-frac-top",item.top],["calc-frac-bottom",item.bottom]]){
           const part=document.createElement("span");part.className=className;part.appendChild(calcRenderExpr(child));box.appendChild(part);
         }
+      }else if(item.kind==="product"){
+        box.append(calcRenderExpr(item.left));
+        const times=document.createElement("span");times.className="calc-op";times.textContent="×";box.append(times,calcRenderExpr(item.right));
       }else{
         box.append(calcRenderExpr(item.base));
         const power=document.createElement("sup");power.appendChild(calcRenderExpr(item.exponent));box.appendChild(power);
@@ -581,6 +585,9 @@
       }else if(kind==="fraction"){
         replacement={kind,top:operand,bottom:calcExpr()};
         first=initial||target.kind!=="number"?replacement.bottom:replacement.top;
+      }else if(kind==="product"){
+        replacement={kind,left:operand,right:calcExpr()};
+        first=initial||target.kind!=="number"?replacement.right:replacement.left;
       }else{
         replacement={kind,base:operand,exponent:calcExpr()};
         first=initial||target.kind!=="number"?replacement.exponent:replacement.base;
@@ -638,6 +645,7 @@
         const a=calcRead(item.top),b=calcRead(item.bottom);
         return calcRat(a.top*b.bottom,a.bottom*b.top);
       }
+      if(item.kind==="product")return calcTimes(calcRead(item.left),calcRead(item.right));
       if(item.kind==="factorial"){
         const a=calcRead(item.arg);
         if(a.bottom!==1n||a.top<0n)throw Error("La factorielle demande un entier positif ou nul.");
@@ -680,7 +688,7 @@
       const key=event.target.closest("button[data-calc]")?.dataset.calc;
       if(!key)return;
       if(/^\d$/.test(key))calcDigit(key);
-      else if(key==="factorial"||key==="fraction"||key==="power")calcTemplate(key);
+      else if(key==="factorial"||key==="fraction"||key==="power"||key==="product")calcTemplate(key);
       else if(["+","-","*"].includes(key))calcOperator(key);
       else if(key==="back")calcBack();
       else if(key==="clear")calcReset();
