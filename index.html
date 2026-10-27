@@ -1,5 +1,7 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#081426"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <title>Nexus Arena · Entraînement aléatoire sur les suites</title><style>
     :root{--bg:#081426;--panel:#142b49;--panel2:#0a1c32;--line:#294461;--text:#f4f8ff;--muted:#b9c7dc;--cyan:#40d9ff;--violet:#aa91ff;--green:#41e69a;--yellow:#ffd369;--red:#ff8190}
     *{box-sizing:border-box}
@@ -90,6 +92,7 @@
     .plot-wrap{width:100%;overflow:auto;text-align:center}.plot-wrap svg{max-width:100%;height:auto}
     .visual[hidden]{display:none!important}.fraction-inline{white-space:nowrap}
     .result-review{text-align:left;margin:25px auto 0;max-width:680px}.result-review details{padding:12px 0;border-top:1px solid var(--line)}.result-review summary{cursor:pointer;font-weight:700}.result-review p{color:var(--muted);margin:8px 0 0}
+    .install-box{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:20px 0 5px}.install-box .button{white-space:nowrap}.install-help{margin:0;color:var(--muted);max-width:570px}.install-box[hidden]{display:none!important}
     @media(max-width:640px){.route-grid{grid-template-columns:1fr}.shell{width:min(880px,calc(100% - 18px))}.panel{padding:18px}.visual{padding:8px}}
 </style></head><body>
 <main class="shell">
@@ -97,6 +100,7 @@
   <section id="menuView" class="panel">
     <h2>Choisis ton parcours</h2>
     <p class="intro">Chaque partie renouvelle les données et l’ordre des questions. Les trois niveaux sont accessibles librement. Une réponse juste du premier coup vaut 1 point ; une réponse corrigée après l’indice vaut 0,5 point.</p>
+    <div id="installBox" class="install-box"><button id="installButton" class="button" type="button">Installer l’application</button><p id="installHelp" class="install-help" role="status" aria-live="polite" hidden></p></div>
     <div class="route-grid" id="routeGrid"></div>
     <div class="settings"><strong>Durée de la partie</strong><div class="segmented" role="group" aria-label="Nombre de questions"><button type="button" id="fiveButton" class="active" aria-pressed="true">5 questions</button><button type="button" id="tenButton" aria-pressed="false">10 questions</button></div></div>
     <h2 id="chosenRoute">Parcours 1 à 3</h2>
@@ -329,4 +333,34 @@ $('answerForm').addEventListener('submit',e=>{e.preventDefault();validate()});
 $('skipButton').addEventListener('click',()=>complete(0,'Solution · 0 point','Tu as choisi de voir la solution.'));
 $('nextButton').addEventListener('click',advance);$('leaveButton').addEventListener('click',()=>showView('menu'));
 $('againButton').addEventListener('click',()=>start(state.level));$('homeButton').addEventListener('click',()=>showView('menu'));
+
+let deferredInstallPrompt=null;
+const installBox=$('installBox'),installHelp=$('installHelp');
+function showInstallHelp(message){installHelp.textContent=message;installHelp.hidden=false}
+function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
+if(isStandalone())installBox.hidden=true;
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();deferredInstallPrompt=event;
+  installHelp.hidden=true;
+});
+window.addEventListener('appinstalled',()=>{
+  deferredInstallPrompt=null;installBox.hidden=true;
+});
+$('installButton').addEventListener('click',async()=>{
+  if(deferredInstallPrompt){
+    const prompt=deferredInstallPrompt;deferredInstallPrompt=null;
+    try{
+      await prompt.prompt();
+      const choice=await prompt.userChoice;
+      if(choice.outcome==='dismissed')showInstallHelp('Installation annulée. Tu peux réessayer depuis le menu du navigateur.');
+    }catch{showInstallHelp('Utilise le menu du navigateur pour installer cette application.');}
+    return;
+  }
+  if(location.protocol==='file:')showInstallHelp('Ouvre la version en ligne de cette page pour l’installer.');
+  else if(/iPad|iPhone|iPod/.test(navigator.userAgent))showInstallHelp('Sur iPhone ou iPad, ouvre la page dans Safari, touche Partager, puis « Ajouter à l’écran d’accueil ».');
+  else showInstallHelp('Dans le menu de ton navigateur, choisis « Installer l’application » ou « Ajouter à l’écran d’accueil ».');
+});
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
 </script></body></html>
